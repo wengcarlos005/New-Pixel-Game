@@ -156,6 +156,7 @@ export function startingInventory() {
   for (let i = 0; i < State.inventory.length; i++) State.inventory[i] = null;
   // The player begins with a single hand-me-down axe, a few fibers and 2 sementes
   addItem(State.hotbar,    'axe', 1);
+  addItem(State.hotbar,    'pickaxe', 1);
   addItem(State.hotbar,    'hoe', 1);
   addItem(State.hotbar,    'watering_can', 1);
   addItem(State.inventory, 'fiber', 3);

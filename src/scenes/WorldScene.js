@@ -20,6 +20,7 @@ export default class WorldScene extends Phaser.Scene {
     this.gridTiles = buildMap(); // 2D array [row][col]
     this.cropsByKey = {};        // key = `${tx},${ty}`
     this.placeablesByKey = {};
+    this.respawnTimers = [];     // pending resource respawns
 
     // Build a Phaser tilemap from a flat array
     const data = this.gridTiles.map(r => r.slice());
@@ -100,12 +101,13 @@ export default class WorldScene extends Phaser.Scene {
     this.cropTick = 0;
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
+    this.startRandomSpawner();
   }
 
   spawnFromList() {
     for (const s of SPAWNS) {
       if (s.type === 'tree' || s.type === 'rock' || s.type === 'scrap' || s.type === 'fiber' || s.type === 'ruin') {
-        const node = new ResourceNode(this, s.x, s.y, s.type);
+        const node = new ResourceNode(this, s.x, s.y, s.type, (kind, ox, oy) => this.scheduleRespawn(kind, ox, oy));
         this.resources.add(node);
         this.interactables.push({ obj: node, kind: s.type });
       } else if (s.type === 'npc') {
@@ -261,6 +263,8 @@ export default class WorldScene extends Phaser.Scene {
     const wx = tx * TILE + TILE/2, wy = ty * TILE + TILE/2;
     const c = new Crop(this, wx, wy, crop);
     this.cropsByKey[`${tx},${ty}`] = c;
+    // Auto-water if soil is already wet
+    if (this.gridTiles[ty][tx] === T.SOIL_WET) c.water();
     toast('Plantado', '#a0d8a0');
   }
 
@@ -378,6 +382,49 @@ export default class WorldScene extends Phaser.Scene {
     this.input.off('pointermove', this.movePlacement, this);
     this.input.off('pointerdown', this.confirmPlacement, this);
     this.placementKind = null;
+  }
+
+  // ---------------------------------------------------------------- RESOURCE RESPAWN
+  scheduleRespawn(kind, ox, oy) {
+    // Respawn same resource kind at a slightly random nearby position after 60–120 s
+    const delay = Phaser.Math.Between(60000, 120000);
+    this.time.delayedCall(delay, () => {
+      // Pick a jitter that keeps the node inside world bounds
+      const jx = Phaser.Math.Clamp(ox + Phaser.Math.Between(-64, 64), TILE * 2, (WORLD.cols - 2) * TILE);
+      const jy = Phaser.Math.Clamp(oy + Phaser.Math.Between(-64, 64), TILE * 2, (WORLD.rows - 2) * TILE);
+      // Avoid water tiles
+      const tx = Math.floor(jx / TILE), ty = Math.floor(jy / TILE);
+      if (this.gridTiles[ty] && (this.gridTiles[ty][tx] === T.WATER_CLEAN || this.gridTiles[ty][tx] === T.WATER_BAD)) return;
+      const node = new ResourceNode(this, jx, jy, kind, (k2, x2, y2) => this.scheduleRespawn(k2, x2, y2));
+      this.resources.add(node);
+      this.interactables.push({ obj: node, kind });
+      // Spawn-in pop animation
+      node.setScale(0.1);
+      this.tweens.add({ targets: node, scaleX: 1, scaleY: 1, duration: 400, ease: 'Back.Out' });
+    });
+  }
+
+  startRandomSpawner() {
+    // Every 45 s, sprout a random resource somewhere valid on the map
+    this.time.addEvent({
+      delay: 45000,
+      loop: true,
+      callback: () => {
+        const kinds = ['tree', 'rock', 'scrap', 'fiber', 'scrap', 'fiber']; // fiber/scrap more common
+        const kind  = kinds[Phaser.Math.Between(0, kinds.length - 1)];
+        const tx    = Phaser.Math.Between(3, WORLD.cols - 3);
+        const ty    = Phaser.Math.Between(3, WORLD.rows - 3);
+        const tile  = this.gridTiles[ty][tx];
+        // Only spawn on grass / dirt / gravel
+        if (tile !== T.GRASS_DRY && tile !== T.GRASS_LUSH && tile !== T.DIRT && tile !== T.GRAVEL) return;
+        const wx = tx * TILE + TILE / 2, wy = ty * TILE + TILE / 2;
+        const node = new ResourceNode(this, wx, wy, kind, (k2, x2, y2) => this.scheduleRespawn(k2, x2, y2));
+        this.resources.add(node);
+        this.interactables.push({ obj: node, kind });
+        node.setScale(0.1);
+        this.tweens.add({ targets: node, scaleX: 1, scaleY: 1, duration: 500, ease: 'Back.Out' });
+      },
+    });
   }
 
   // ---------------------------------------------------------------- ENERGY EVENT

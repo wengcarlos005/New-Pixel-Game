@@ -39,9 +39,7 @@ export default class Crop extends Phaser.GameObjects.Sprite {
       this.elapsed = 0;
       this.stage += 1;
       this.setFrame(ROWS[this.kind] * 4 + this.stage);
-      // Each stage consumes the water
-      this.watered = false;
-      this.clearTint();
+      // watered stays true — crop grows through all stages once watered
     }
   }
 

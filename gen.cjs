@@ -230,7 +230,7 @@ function tGrassDry(px,W,ox,oy){
   [[6,6],[23,11],[12,24],[27,27]].forEach(([dx,dy])=>{
     flower(px,W,ox+dx,oy+dy, [234,118,78]);
   });
-  tileEdgeShade(px,W,ox,oy);
+  // No edge shade — tiles tile seamlessly
 }
 function flower(px,W,x,y,petal=[236,210,120]){
   sp(px,W,x,y, 70,130,52);
@@ -275,15 +275,24 @@ function tileEdgeShade(px,W,ox,oy){
   }
 }
 function tGrassLush(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [148,228,68]);
-  for(let i=0;i<22;i++){
-    const gx=ox+3+(noise2(ox+i+7,oy+3)%(S-6)), gy=oy+3+(noise2(oy+i+5,ox+1)%(S-6));
+  // Rich multi-shade green base
+  for(let y=0;y<S;y++) for(let x=0;x<S;x++){
+    const n=(noise2(ox+x,oy+y)+noise2(ox+x+17,oy+y+5))%24;
+    const col = n<4 ? P.grassLush2 : n<16 ? P.grassLush : [148,228,68];
+    sp(px,W,ox+x,oy+y, col[0],col[1],col[2]);
+  }
+  // Dense tufts — more than dry grass
+  for(let i=0;i<26;i++){
+    const gx=ox+2+(noise2(ox+i+7,oy+3)%(S-4)), gy=oy+2+(noise2(oy+i+5,ox+1)%(S-4));
     grassTuft(px,W,gx,gy, [14,108,34], [78,196,48], [196,254,86]);
   }
-  // Extra leaf clusters for lush density
-  [[4,12],[22,8],[14,26],[28,18]].forEach(([dx,dy])=>leafCluster(px,W,ox+dx,oy+dy,[14,100,36],[76,186,50],[172,240,88]));
-  [[8,8],[21,20],[26,9],[12,16]].forEach(([dx,dy])=>flower(px,W,ox+dx,oy+dy, [252,186,60]));
-  tileEdgeShade(px,W,ox,oy);
+  // Leaf clusters for extra density
+  [[4,12],[22,8],[14,26],[28,18],[8,22],[24,4]].forEach(([dx,dy])=>
+    leafCluster(px,W,ox+dx,oy+dy,[14,100,36],[76,186,50],[172,240,88]));
+  // Bright wildflowers
+  [[7,7],[20,19],[26,8],[12,15],[4,27],[28,24]].forEach(([dx,dy])=>
+    flower(px,W,ox+dx,oy+dy, [252,210,60]));
+  // No edge shade — tiles tile seamlessly
 }
 function tDirt(px,W,ox,oy){
   tileBase(px,W,ox,oy, P.dirt, P.dirt2, [146,106,72]);
@@ -589,23 +598,46 @@ function genRock(){
   return makePNG(W,H,px);
 }
 function genScrap(){
-  const W=32,H=24, px=blankPx(W,H);
-  fe(px,W,16,21,12,2, 30,30,34,150);
-  // tangled metal sheets
-  fr(px,W,6,12,12,6, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
-  fr(px,W,6,12,12,1, P.scrap[0],P.scrap[1],P.scrap[2]);
-  fr(px,W,14,14,14,5, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
-  fr(px,W,14,14,14,1, P.scrap[0],P.scrap[1],P.scrap[2]);
-  line(px,W,7,18,18,10, 70,72,78);
-  line(px,W,14,7,25,18, 190,176,146);
-  // pipe / wire
-  fr(px,W,10,6,2,8, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
-  fr(px,W,12,6,8,2, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
-  // rust
-  fr(px,W,8,14,3,2, P.scrapRust[0],P.scrapRust[1],P.scrapRust[2]);
-  fr(px,W,22,16,3,2, P.scrapRust[0],P.scrapRust[1],P.scrapRust[2]);
-  // bolts
-  sp(px,W,8,13, 20,18,18); sp(px,W,16,13, 20,18,18); sp(px,W,24,15, 20,18,18);
+  // Redesigned: recognisable pile of bent metal debris (32×24)
+  const W=32, H=24, px=blankPx(W,H);
+  // Ground shadow
+  fe(px,W,16,22,13,2, 20,18,22,160);
+  // --- Bottom / back layer: wide bent sheet (dark face, bright top edge) ---
+  fr(px,W,4,14,24,8,  P.scrap2[0],P.scrap2[1],P.scrap2[2]);   // dark face
+  fr(px,W,4,14,24,1,  210,205,180);                            // bright top edge
+  fr(px,W,4,21,24,1,  60,58,54);                               // dark bottom edge
+  // Diagonal crease across the sheet
+  line(px,W,4,19,27,14, 70,72,78);
+  // --- Middle layer: shorter sheet tilted left ---
+  fr(px,W,6,10,16,7,  P.scrap[0],P.scrap[1],P.scrap[2]);
+  fr(px,W,6,10,16,1,  220,214,190);                            // highlight
+  fr(px,W,6,16,16,1,  58,56,52);
+  line(px,W,6,13,21,10, 80,82,88);
+  // --- Top layer: small square scrap piece, angled ---
+  fr(px,W,14,6,12,6,  P.scrap[0]-10,P.scrap[1]-10,P.scrap[2]-10);
+  fr(px,W,14,6,12,1,  215,208,182);
+  fr(px,W,14,11,12,1, 55,53,50);
+  // --- Pipe / rod across the pile ---
+  fr(px,W,8,8,3,14,   P.scrap2[0]+6,P.scrap2[1]+6,P.scrap2[2]+6);  // pipe body
+  fr(px,W,8,8,1,14,   P.scrap[0]+20,P.scrap[1]+20,P.scrap[2]+20);  // pipe highlight
+  // Pipe end cap
+  fr(px,W,7,7,5,2,    80,84,90);
+  // --- Spring / coil (right side) ---
+  for(let i=0;i<5;i++){
+    sp(px,W,22+((i%2)*2),9+i*2,  P.scrap[0],P.scrap[1],P.scrap[2]);
+    sp(px,W,23+((i%2)*2),10+i*2, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
+  }
+  // --- Rust patches ---
+  fr(px,W,10,16,4,2,  P.scrapRust[0],P.scrapRust[1],P.scrapRust[2]);
+  fr(px,W,20,12,3,2,  P.scrapRust[0],P.scrapRust[1],P.scrapRust[2]);
+  sp(px,W,7,20,       160,72,40);
+  // --- Bolts / rivets ---
+  [[ 7,15],[ 14,15],[26,15],[ 9,20],[23,19]].forEach(([bx,by])=>{
+    sp(px,W,bx,by,   24,22,20);
+    sp(px,W,bx+1,by, 130,128,120);
+  });
+  // Outline the whole pile
+  outline(px,W,4,6,24,16, 28,26,24);
   return makePNG(W,H,px);
 }
 function genFiber(){

@@ -13,11 +13,12 @@ const TABLE = {
 };
 
 export default class ResourceNode extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y, kind) {
+  constructor(scene, x, y, kind, onHarvested) {
     const cfg = TABLE[kind];
     super(scene, x, y, cfg.texture);
     this.kind = kind;
     this.cfg = cfg;
+    this.onHarvested = onHarvested || null;
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
     // Visual offset: anchor at base
@@ -49,6 +50,7 @@ export default class ResourceNode extends Phaser.Physics.Arcade.Sprite {
       if (this.kind === 'tree' && Math.random() < 0.3) pickup('fiber', 1);
       // Scrap chance for energy cell
       if (this.kind === 'scrap' && Math.random() < 0.15) pickup('energy_cell', 1);
+      if (this.onHarvested) this.onHarvested(this.kind, this.x, this.y - 16);
       this.destroy();
     }
     return true;
