@@ -1,0 +1,23 @@
+{
+  "order": [
+    "wood",
+    "scrap",
+    "stone",
+    "fiber",
+    "water",
+    "seed_potato",
+    "seed_wheat",
+    "seed_mushroom",
+    "crop_potato",
+    "crop_wheat",
+    "crop_mushroom",
+    "axe",
+    "pickaxe",
+    "hoe",
+    "watering_can",
+    "scythe",
+    "meal",
+    "energy_cell"
+  ],
+  "size": 16
+}
