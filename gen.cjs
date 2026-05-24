@@ -35,54 +35,72 @@ function blankPx(w,h){ return Buffer.alloc(w*h*4); }
 function sp(px,W,x,y,r,g,b,a=255){ if(x<0||y<0||x>=W||y>=(px.length/(W*4))) return; const i=(y*W+x)*4; px[i]=r;px[i+1]=g;px[i+2]=b;px[i+3]=a; }
 function fr(px,W,x,y,w,h,r,g,b,a=255){ for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++) sp(px,W,x+dx,y+dy,r,g,b,a); }
 function fc(px,W,cx,cy,rad,r,g,b,a=255){ for(let dy=-rad;dy<=rad;dy++) for(let dx=-rad;dx<=rad;dx++) if(dx*dx+dy*dy<=rad*rad) sp(px,W,cx+dx,cy+dy,r,g,b,a); }
+function fe(px,W,cx,cy,rx,ry,r,g,b,a=255){ for(let dy=-ry;dy<=ry;dy++) for(let dx=-rx;dx<=rx;dx++) if((dx*dx)/(rx*rx)+(dy*dy)/(ry*ry)<=1) sp(px,W,cx+dx,cy+dy,r,g,b,a); }
+function line(px,W,x0,y0,x1,y1,r,g,b,a=255){
+  let dx=Math.abs(x1-x0), sx=x0<x1?1:-1, dy=-Math.abs(y1-y0), sy=y0<y1?1:-1, err=dx+dy;
+  while(true){
+    sp(px,W,x0,y0,r,g,b,a);
+    if(x0===x1 && y0===y1) break;
+    const e2=2*err;
+    if(e2>=dy){ err+=dy; x0+=sx; }
+    if(e2<=dx){ err+=dx; y0+=sy; }
+  }
+}
 function outline(px,W,x,y,w,h,r,g,b,a=255){
   for(let dx=0;dx<w;dx++){ sp(px,W,x+dx,y,r,g,b,a); sp(px,W,x+dx,y+h-1,r,g,b,a); }
   for(let dy=0;dy<h;dy++){ sp(px,W,x,y+dy,r,g,b,a); sp(px,W,x+w-1,y+dy,r,g,b,a); }
 }
 function noise2(x,y){ return ((x*2654435761^y*2246822519)>>>0)%256; }
+function shade(col, amt){ return col.map(v=>Math.max(0, Math.min(255, v + amt))); }
+function grassTuft(px,W,x,y,dark,mid,light){
+  line(px,W,x,y,x-1,y-4, dark[0],dark[1],dark[2]);
+  line(px,W,x+1,y,x+1,y-5, mid[0],mid[1],mid[2]);
+  line(px,W,x+2,y,x+4,y-3, dark[0],dark[1],dark[2]);
+  sp(px,W,x+1,y-5, light[0],light[1],light[2]);
+}
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const P = {
   // grounds
-  grassDry:  [110,118, 78],
-  grassDry2: [ 96,104, 68],
-  grassDry3: [128,134, 92],
-  grassLush: [ 88,156, 70],
-  grassLush2:[ 70,134, 56],
-  dirt:      [ 92, 80, 64],
-  dirt2:     [ 76, 64, 50],
-  soilTill:  [ 70, 54, 40],
-  soilTill2: [ 56, 42, 30],
-  soilWet:   [ 48, 34, 24],
-  soilWet2:  [ 38, 26, 18],
-  waterBad:  [ 60, 80, 90],
-  waterBad2: [ 42, 64, 72],
-  waterClean:[ 70,130,170],
-  waterClean2:[100,170,220],
-  gravel:    [108,104, 96],
-  metal:     [ 78, 84, 92],
-  metal2:    [ 60, 66, 74],
-  metalClean:[148,156,168],
-  ash:       [ 90, 86, 80],
-  ash2:      [ 70, 66, 60],
+  grassDry:  [132,140, 85],
+  grassDry2: [104,116, 72],
+  grassDry3: [154,156, 96],
+  grassLush: [ 96,174, 78],
+  grassLush2:[ 58,132, 62],
+  dirt:      [128, 94, 64],
+  dirt2:     [ 96, 68, 48],
+  soilTill:  [104, 70, 46],
+  soilTill2: [ 72, 46, 32],
+  soilWet:   [ 68, 42, 30],
+  soilWet2:  [ 42, 26, 20],
+  waterBad:  [ 72, 94, 96],
+  waterBad2: [ 48, 70, 78],
+  waterClean:[ 58,132,178],
+  waterClean2:[110,184,218],
+  gravel:    [134,128,112],
+  metal:     [ 88, 94,104],
+  metal2:    [ 58, 64, 74],
+  metalClean:[154,166,176],
+  ash:       [104,100, 90],
+  ash2:      [ 74, 70, 64],
   // objects
-  woodBark:  [ 84, 60, 40],
-  woodBark2: [ 60, 42, 28],
-  woodLight: [120, 90, 56],
-  leafDead:  [124,116, 70],
-  leafLush:  [ 80,156, 72],
-  leafLush2: [ 50,124, 58],
-  rock:      [120,118,110],
-  rock2:     [ 88, 86, 80],
-  scrap:     [148,140,124],
-  scrap2:    [ 96, 90, 80],
-  scrapRust: [148, 86, 56],
-  fiberStem: [120,138, 86],
-  fiberLeaf: [156,176,110],
+  woodBark:  [116, 76, 44],
+  woodBark2: [ 70, 44, 30],
+  woodLight: [172,118, 62],
+  leafDead:  [148,132, 72],
+  leafLush:  [ 88,172, 72],
+  leafLush2: [ 42,120, 58],
+  rock:      [146,140,126],
+  rock2:     [ 86, 84, 78],
+  scrap:     [166,158,136],
+  scrap2:    [100, 98, 92],
+  scrapRust: [174, 88, 52],
+  fiberStem: [102,146, 78],
+  fiberLeaf: [164,196,104],
   // ruins
-  ruinWall:  [ 96,100,108],
-  ruinWall2: [ 70, 74, 84],
-  ruinMoss:  [ 86,128, 84],
+  ruinWall:  [120,122,126],
+  ruinWall2: [ 76, 78, 86],
+  ruinMoss:  [ 72,138, 82],
   // ui
   uiBg:      [ 18, 22, 30],
   uiSlot:    [ 36, 42, 54],
@@ -102,54 +120,97 @@ const S = 32;
 
 function tileBase(px,W,ox,oy, baseCol, varyCol, vary2Col){
   for(let y=0;y<S;y++) for(let x=0;x<S;x++){
-    const n=noise2(ox+x,oy+y)%12;
-    const col = n<4 ? varyCol : (n<8 ? baseCol : vary2Col);
+    const n=(noise2(ox+x,oy+y)+noise2(Math.floor((ox+x)/3),Math.floor((oy+y)/3)))%18;
+    const col = n<5 ? varyCol : (n<13 ? baseCol : vary2Col);
     sp(px,W,ox+x,oy+y, col[0],col[1],col[2]);
   }
 }
 
 function tGrassDry(px,W,ox,oy){
   tileBase(px,W,ox,oy, P.grassDry, P.grassDry3, P.grassDry2);
-  for(let i=0;i<7;i++){
+  for(let i=0;i<11;i++){
     const gx=ox+2+(noise2(ox+i,oy)%(S-4)), gy=oy+2+(noise2(oy+i,ox)%(S-4));
-    sp(px,W,gx,gy,80,86,52); sp(px,W,gx,gy-1,90,96,56);
+    grassTuft(px,W,gx,gy, [74,88,50], [118,126,70], [184,174,92]);
+  }
+  [[6,6],[23,11],[12,24]].forEach(([dx,dy])=>{
+    sp(px,W,ox+dx,oy+dy, 196,170,90);
+    sp(px,W,ox+dx+1,oy+dy, 104,122,66);
+  });
+}
+function flower(px,W,x,y,petal=[236,210,120]){
+  sp(px,W,x,y, 70,130,52);
+  sp(px,W,x,y-1, 242,226,126);
+  sp(px,W,x-1,y-1, petal[0],petal[1],petal[2]);
+  sp(px,W,x+1,y-1, petal[0],petal[1],petal[2]);
+}
+function leafCluster(px,W,x,y,dark,mid,light){
+  fc(px,W,x,y,2, dark[0],dark[1],dark[2]);
+  sp(px,W,x,y-2, mid[0],mid[1],mid[2]);
+  sp(px,W,x-1,y-1, mid[0],mid[1],mid[2]);
+  sp(px,W,x+1,y-1, mid[0],mid[1],mid[2]);
+  sp(px,W,x,y-3, light[0],light[1],light[2]);
+}
+function pebble(px,W,x,y,light,shadow){
+  sp(px,W,x,y, light[0],light[1],light[2]);
+  sp(px,W,x+1,y, shadow[0],shadow[1],shadow[2]);
+}
+function soilRows(px,W,ox,oy,shadow,mid,hi){
+  for(let row=4; row<S; row+=7){
+    for(let x=2;x<S-2;x++){
+      const wiggle = (noise2(ox+x,row)%5)===0 ? 1 : 0;
+      sp(px,W,ox+x,oy+row+wiggle, shadow[0],shadow[1],shadow[2]);
+      if(x%2===0) sp(px,W,ox+x,oy+row+1+wiggle, mid[0],mid[1],mid[2]);
+    }
+  }
+  [[6,9],[18,15],[25,25]].forEach(([dx,dy])=>sp(px,W,ox+dx,oy+dy, hi[0],hi[1],hi[2]));
+}
+function waterSparkle(px,W,ox,oy,dx,dy){
+  sp(px,W,ox+dx,oy+dy, 210,238,250);
+  sp(px,W,ox+dx+1,oy+dy, 156,210,238);
+  sp(px,W,ox+dx,oy+dy+1, 156,210,238);
+}
+function metalBolt(px,W,x,y){
+  sp(px,W,x,y, 34,38,44);
+  sp(px,W,x+1,y, 124,132,144);
+}
+function tileEdgeShade(px,W,ox,oy){
+  for(let x=0;x<S;x++){
+    sp(px,W,ox+x,oy+S-1, 0,0,0,35);
+    sp(px,W,ox+x,oy, 255,255,255,18);
   }
 }
 function tGrassLush(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [70,148,64]);
-  for(let i=0;i<6;i++){
+  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [124,190,82]);
+  for(let i=0;i<13;i++){
     const gx=ox+3+(noise2(ox+i+7,oy+3)%(S-6)), gy=oy+3+(noise2(oy+i+5,ox+1)%(S-6));
-    sp(px,W,gx,gy,40,90,40); sp(px,W,gx+1,gy,180,210,90); sp(px,W,gx,gy-1,200,220,120);
+    grassTuft(px,W,gx,gy, [32,102,48], [84,170,64], [190,228,112]);
   }
+  [[8,8],[21,20]].forEach(([dx,dy])=>flower(px,W,ox+dx,oy+dy, [238,164,122]));
+  tileEdgeShade(px,W,ox,oy);
 }
 function tDirt(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.dirt, P.dirt2, [104,92,72]);
-  [[5,7],[18,14],[24,22],[10,25],[28,5]].forEach(([dx,dy])=>{
-    sp(px,W,ox+dx,oy+dy, 60,52,40);
-    sp(px,W,ox+dx+1,oy+dy, 68,58,46);
+  tileBase(px,W,ox,oy, P.dirt, P.dirt2, [146,106,72]);
+  [[5,7],[18,14],[24,22],[10,25],[28,5],[14,4],[6,20]].forEach(([dx,dy])=>{
+    pebble(px,W,ox+dx,oy+dy, [152,116,82], [82,58,42]);
   });
 }
 function tSoilTill(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.soilTill, P.soilTill2, [80,62,46]);
-  for(let row=0; row<S; row+=8){
-    for(let x=0;x<S;x++) sp(px,W,ox+x,oy+row, 40,28,18);
-    for(let x=0;x<S;x++) sp(px,W,ox+x,oy+row+1, 92,72,52);
-  }
+  tileBase(px,W,ox,oy, P.soilTill, P.soilTill2, [130,86,56]);
+  soilRows(px,W,ox,oy, [48,30,22], [134,88,58], [160,104,66]);
 }
 function tSoilWet(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.soilWet, P.soilWet2, [60,42,28]);
-  for(let row=0; row<S; row+=8){
-    for(let x=0;x<S;x++) sp(px,W,ox+x,oy+row, 24,16,10);
-    for(let x=0;x<S;x++) sp(px,W,ox+x,oy+row+1, 70,52,36);
-  }
+  tileBase(px,W,ox,oy, P.soilWet, P.soilWet2, [84,52,36]);
+  soilRows(px,W,ox,oy, [28,18,14], [82,54,38], [108,76,54]);
   [[6,10],[22,18],[14,26]].forEach(([dx,dy])=>{
-    sp(px,W,ox+dx,oy+dy, 90,130,170);
+    sp(px,W,ox+dx,oy+dy, 90,136,174);
+    sp(px,W,ox+dx+1,oy+dy, 52,86,122);
   });
 }
 function tWaterBad(px,W,ox,oy){
   fr(px,W,ox,oy,S,S, P.waterBad[0],P.waterBad[1],P.waterBad[2]);
   for(let y=0;y<S;y++) for(let x=0;x<S;x++){
     if(((x+y*2)%14)<3) sp(px,W,ox+x,oy+y, P.waterBad2[0],P.waterBad2[1],P.waterBad2[2]);
+    if(((x-y+3)%21)===0) sp(px,W,ox+x,oy+y, 98,120,94);
   }
   // sludge bubbles
   [[4,8],[19,14],[25,24]].forEach(([dx,dy])=>{
@@ -160,16 +221,18 @@ function tWaterBad(px,W,ox,oy){
 function tWaterClean(px,W,ox,oy){
   fr(px,W,ox,oy,S,S, P.waterClean[0],P.waterClean[1],P.waterClean[2]);
   for(let y=0;y<S;y++) for(let x=0;x<S;x++){
-    if(((x-y+5)%12)<3) sp(px,W,ox+x,oy+y, P.waterClean2[0],P.waterClean2[1],P.waterClean2[2]);
+    if(((x-y+5)%12)<3) sp(px,W,ox+x,oy+y, P.waterClean2[0],P.waterClean2[1],P.waterClean2[2],210);
+    if(((x+y)%23)===0) sp(px,W,ox+x,oy+y, 44,104,154);
   }
-  fr(px,W,ox+4,oy+8,8,2,180,220,250);
-  fr(px,W,ox+18,oy+22,6,2,180,220,250);
+  waterSparkle(px,W,ox,oy,5,8);
+  waterSparkle(px,W,ox,oy,20,22);
+  waterSparkle(px,W,ox,oy,14,14);
 }
 function tGravel(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.gravel, [90,88,82], [124,120,112]);
-  for(let i=0;i<6;i++){
+  tileBase(px,W,ox,oy, P.gravel, [102,98,88], [156,148,132]);
+  for(let i=0;i<10;i++){
     const gx=ox+2+(noise2(ox+i,oy+i*3)%(S-4)), gy=oy+2+(noise2(oy+i,ox+i*2)%(S-4));
-    fr(px,W,gx,gy,2,1, 60,58,52);
+    pebble(px,W,gx,gy, [170,164,146], [78,74,66]);
   }
 }
 function tMetalFloor(px,W,ox,oy){
@@ -183,17 +246,13 @@ function tMetalFloor(px,W,ox,oy){
     sp(px,W,ox+dx,oy+dy+1, 110,60,38);
   });
   // bolts
-  [[2,2],[28,2],[2,28],[28,28]].forEach(([dx,dy])=>{
-    sp(px,W,ox+dx,oy+dy, 30,34,40);
-  });
+  [[2,2],[28,2],[2,28],[28,28]].forEach(([dx,dy])=>metalBolt(px,W,ox+dx,oy+dy));
 }
 function tMetalClean(px,W,ox,oy){
   fr(px,W,ox,oy,S,S, P.metalClean[0],P.metalClean[1],P.metalClean[2]);
   for(let x=0;x<S;x++){ sp(px,W,ox+x,oy+15, 100,108,120); sp(px,W,ox+x,oy+16, 80,88,100); }
   for(let y=0;y<S;y++){ sp(px,W,ox+15,oy+y, 100,108,120); sp(px,W,ox+16,oy+y, 80,88,100); }
-  [[2,2],[28,2],[2,28],[28,28]].forEach(([dx,dy])=>{
-    sp(px,W,ox+dx,oy+dy, 60,68,80);
-  });
+  [[2,2],[28,2],[2,28],[28,28]].forEach(([dx,dy])=>metalBolt(px,W,ox+dx,oy+dy));
   // glow accents
   fr(px,W,ox+12,oy+12,8,8, 60,140,200,90);
 }
@@ -236,18 +295,22 @@ function drawHuman(px,W,ox,oy, dir, frame, palette){
   // palette: { skin, skinShade, shirt, shirtDark, pants, hair, hairDark, boots, outline }
   const o = palette.outline;
   // shadow
-  fr(px,W,ox+3,oy+22,10,1, 10,12,16,140);
+  fr(px,W,ox+3,oy+22,10,2, 10,12,16,120);
 
   // body bobs on step frames
   const bob = (frame===1 ? -1 : (frame===2 ? 0 : 0));
   const by = oy + bob;
 
   // Head (8x8)
-  const hx = ox+4, hy = by+2;
+  const hx = ox+4, hy = by+1;
+  fr(px,W,hx-1,hy+2,10,7, o[0],o[1],o[2]);
   fr(px,W,hx,hy,8,8, palette.skin[0],palette.skin[1],palette.skin[2]);
-  outline(px,W,hx,hy,8,8, o[0],o[1],o[2]);
+  fr(px,W,hx+6,hy+2,1,5, palette.skinShade[0],palette.skinShade[1],palette.skinShade[2]);
+  sp(px,W,hx+2,hy+1, shade(palette.skin,24)[0],shade(palette.skin,24)[1],shade(palette.skin,24)[2]);
   // hair cap
+  fr(px,W,hx-1,hy,10,3, palette.hairDark[0],palette.hairDark[1],palette.hairDark[2]);
   fr(px,W,hx,hy,8,3, palette.hair[0],palette.hair[1],palette.hair[2]);
+  sp(px,W,hx+1,hy, shade(palette.hair,34)[0],shade(palette.hair,34)[1],shade(palette.hair,34)[2]);
   if(dir==='down'||dir==='up') fr(px,W,hx,hy+3,8,1, palette.hairDark[0],palette.hairDark[1],palette.hairDark[2]);
   // face: only show eyes on down/left/right
   if(dir==='down'){
@@ -264,15 +327,18 @@ function drawHuman(px,W,ox,oy, dir, frame, palette){
 
   // Torso (8x6)
   const tx = ox+4, ty = by+10;
+  fr(px,W,tx-1,ty,10,7, o[0],o[1],o[2]);
   fr(px,W,tx,ty,8,6, palette.shirt[0],palette.shirt[1],palette.shirt[2]);
+  fr(px,W,tx+1,ty+1,2,1, shade(palette.shirt,35)[0],shade(palette.shirt,35)[1],shade(palette.shirt,35)[2]);
   fr(px,W,tx,ty+5,8,1, palette.shirtDark[0],palette.shirtDark[1],palette.shirtDark[2]);
-  outline(px,W,tx,ty,8,6, o[0],o[1],o[2]);
   // Belt
   fr(px,W,tx,ty+5,8,1, 40,32,24);
 
   // Arms
   if(dir==='down' || dir==='up'){
     const aOff = (frame===1?-1:(frame===2?1:0));
+    fr(px,W,ox+1,ty+1+aOff,1,5, o[0],o[1],o[2]);
+    fr(px,W,ox+14,ty+1-aOff,1,5, o[0],o[1],o[2]);
     fr(px,W,ox+2,ty+1+aOff,2,4, palette.shirt[0],palette.shirt[1],palette.shirt[2]);
     fr(px,W,ox+12,ty+1-aOff,2,4, palette.shirt[0],palette.shirt[1],palette.shirt[2]);
     fr(px,W,ox+2,ty+5+aOff,2,1, palette.skin[0],palette.skin[1],palette.skin[2]);
@@ -289,35 +355,38 @@ function drawHuman(px,W,ox,oy, dir, frame, palette){
   const lx1 = ox+5, lx2 = ox+9, ly = by+16;
   const leftLeg  = (frame===1 ? 1 : 0);
   const rightLeg = (frame===2 ? 1 : 0);
+  fr(px,W,lx1-1,ly,4,6-leftLeg, o[0],o[1],o[2]);
+  fr(px,W,lx2-1,ly,4,6-rightLeg, o[0],o[1],o[2]);
   fr(px,W,lx1,ly,2,6-leftLeg, palette.pants[0],palette.pants[1],palette.pants[2]);
   fr(px,W,lx2,ly,2,6-rightLeg, palette.pants[0],palette.pants[1],palette.pants[2]);
+  sp(px,W,lx1,ly, shade(palette.pants,26)[0],shade(palette.pants,26)[1],shade(palette.pants,26)[2]);
   // boots
-  fr(px,W,lx1,ly+6-leftLeg-1,2,1, palette.boots[0],palette.boots[1],palette.boots[2]);
-  fr(px,W,lx2,ly+6-rightLeg-1,2,1, palette.boots[0],palette.boots[1],palette.boots[2]);
+  fr(px,W,lx1-1,ly+6-leftLeg-1,4,2, palette.boots[0],palette.boots[1],palette.boots[2]);
+  fr(px,W,lx2-1,ly+6-rightLeg-1,4,2, palette.boots[0],palette.boots[1],palette.boots[2]);
 }
 
 const PLAYER_PALETTE = {
-  skin:[225,190,150], skinShade:[180,140,100],
-  shirt:[ 80,130,180], shirtDark:[ 50, 90,140],
-  pants:[ 60, 56, 70], hair:[ 60, 40, 30], hairDark:[ 40, 24, 18],
+  skin:[230,190,146], skinShade:[176,126, 88],
+  shirt:[ 66,134,178], shirtDark:[ 38, 82,126],
+  pants:[ 62, 58, 82], hair:[ 74, 46, 28], hairDark:[ 42, 26, 18],
   boots:[ 40, 30, 24], outline:[ 20, 18, 24]
 };
 const NPC_FARMER = {
-  skin:[230,200,170], skinShade:[190,150,120],
-  shirt:[170,140, 80], shirtDark:[120,100, 60],
-  pants:[ 90, 70, 50], hair:[120, 90, 50], hairDark:[ 80, 60, 30],
+  skin:[234,198,166], skinShade:[184,142,110],
+  shirt:[186,146, 76], shirtDark:[128, 92, 48],
+  pants:[ 98, 74, 50], hair:[134, 88, 44], hairDark:[ 82, 52, 28],
   boots:[ 50, 40, 30], outline:[ 20, 18, 24]
 };
 const NPC_MECHANIC = {
-  skin:[210,180,140], skinShade:[170,140,100],
-  shirt:[180,100, 60], shirtDark:[130, 70, 40],
-  pants:[ 50, 60, 80], hair:[ 50, 40, 40], hairDark:[ 30, 24, 24],
+  skin:[218,178,136], skinShade:[164,126, 90],
+  shirt:[194, 96, 58], shirtDark:[128, 58, 36],
+  pants:[ 48, 64, 92], hair:[ 58, 46, 42], hairDark:[ 30, 24, 24],
   boots:[ 60, 60, 60], outline:[ 20, 18, 24]
 };
 const NPC_EXPLORER = {
-  skin:[200,170,140], skinShade:[160,130,100],
-  shirt:[110,130,140], shirtDark:[ 70, 90,110],
-  pants:[ 60, 70, 60], hair:[ 90, 70, 40], hairDark:[ 60, 50, 30],
+  skin:[204,168,136], skinShade:[154,120, 92],
+  shirt:[102,136,132], shirtDark:[ 62, 90, 98],
+  pants:[ 62, 78, 56], hair:[104, 72, 38], hairDark:[ 62, 44, 26],
   boots:[ 50, 50, 50], outline:[ 20, 18, 24]
 };
 
@@ -337,56 +406,71 @@ function genHumanSheet(palette){
 // ─── Props ────────────────────────────────────────────────────────────────────
 function genDeadTree(){
   const W=32,H=48, px=blankPx(W,H);
-  fr(px,W,8,40,16,2, 30,24,20,180); // shadow
+  fe(px,W,16,42,12,3, 30,24,20,150);
   // trunk
-  fr(px,W,14,16,4,28, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,14,16,1,28, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  fr(px,W,17,16,1,28, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,13,15,6,29, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  fr(px,W,13,15,1,29, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,18,17,1,25, 54,34,24);
+  line(px,W,16,16,15,40, 154,96,54);
+  line(px,W,17,18,18,38, 86,54,34);
   // root flare
-  fr(px,W,12,40,8,4, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,10,40,12,4, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
   // dead branches
-  fr(px,W,18,12,8,2, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,24,8,2,6, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,6,18,8,2, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,4,12,2,8, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,14,4,4,12, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,18,17,27,10, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,25,10,28,5, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  line(px,W,14,21,5,14, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,6,14,4,8, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  line(px,W,16,15,14,4, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,14,7,10,3, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  [[12,27],[20,30],[9,35]].forEach(([x,y])=>leafCluster(px,W,x,y,[96,92,52],P.leafDead,[176,154,78]));
   return makePNG(W,H,px);
 }
 function genLushTree(){
   const W=32,H=48, px=blankPx(W,H);
-  fr(px,W,8,40,16,2, 30,24,20,180);
-  fr(px,W,14,28,4,16, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,14,28,1,16, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  // canopy
-  fc(px,W,16,16,12, P.leafLush2[0],P.leafLush2[1],P.leafLush2[2]);
-  fc(px,W,16,14,10, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
-  fc(px,W,12,10,4, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
-  fc(px,W,20,12,4, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
-  fc(px,W,18,8,3, 130,200,110);
+  fe(px,W,16,42,13,3, 30,24,20,145);
+  fr(px,W,13,27,6,17, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  fr(px,W,13,27,1,17, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,18,29,1,13, 68,42,26);
+  line(px,W,16,29,12,38, 170,104,58);
+  // dark silhouette first, then leafy clumps for a softer hand-pixeled crown.
+  fe(px,W,16,17,15,13, 24,80,42);
+  fc(px,W,8,18,7, 24,80,42);
+  fc(px,W,24,17,7, 24,80,42);
+  fc(px,W,16,8,8, 24,80,42);
+  fe(px,W,16,18,13,11, P.leafLush2[0],P.leafLush2[1],P.leafLush2[2]);
+  fc(px,W,10,16,6, 68,150,62);
+  fc(px,W,22,15,6, 70,154,66);
+  fc(px,W,16,9,7, 92,180,76);
+  fc(px,W,15,18,6, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
+  [[10,10],[18,7],[23,13],[13,20],[19,18]].forEach(([x,y])=>sp(px,W,x,y, 176,224,112));
   return makePNG(W,H,px);
 }
 function genRock(){
   const W=32,H=24, px=blankPx(W,H);
-  fr(px,W,4,20,24,2, 30,30,34,180);
+  fe(px,W,16,21,12,2, 30,30,34,150);
   // chunky rock
-  fc(px,W,16,16,10, P.rock[0],P.rock[1],P.rock[2]);
+  fc(px,W,16,16,10, P.rock2[0],P.rock2[1],P.rock2[2]);
   fc(px,W,12,14,7, P.rock[0],P.rock[1],P.rock[2]);
-  fc(px,W,20,12,6, P.rock[0],P.rock[1],P.rock[2]);
+  fc(px,W,20,12,6, shade(P.rock,10)[0],shade(P.rock,10)[1],shade(P.rock,10)[2]);
   // shading
   fr(px,W,8,18,16,4, P.rock2[0],P.rock2[1],P.rock2[2]);
   // highlight
-  fr(px,W,10,8,3,2, 160,158,150);
-  fr(px,W,18,6,2,2, 160,158,150);
+  line(px,W,9,9,14,7, 184,180,162);
+  line(px,W,18,6,22,8, 184,180,162);
+  sp(px,W,12,15, 78,74,68);
+  sp(px,W,21,15, 70,68,64);
   return makePNG(W,H,px);
 }
 function genScrap(){
   const W=32,H=24, px=blankPx(W,H);
-  fr(px,W,4,20,24,2, 30,30,34,180);
+  fe(px,W,16,21,12,2, 30,30,34,150);
   // tangled metal sheets
   fr(px,W,6,12,12,6, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
   fr(px,W,6,12,12,1, P.scrap[0],P.scrap[1],P.scrap[2]);
   fr(px,W,14,14,14,5, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
   fr(px,W,14,14,14,1, P.scrap[0],P.scrap[1],P.scrap[2]);
+  line(px,W,7,18,18,10, 70,72,78);
+  line(px,W,14,7,25,18, 190,176,146);
   // pipe / wire
   fr(px,W,10,6,2,8, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
   fr(px,W,12,6,8,2, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
@@ -399,10 +483,14 @@ function genScrap(){
 }
 function genFiber(){
   const W=24,H=20, px=blankPx(W,H);
-  fr(px,W,4,16,16,2, 30,40,30,180);
+  fe(px,W,12,17,9,2, 30,40,30,150);
   // bush
-  fc(px,W,12,12,7, P.fiberStem[0],P.fiberStem[1],P.fiberStem[2]);
-  fc(px,W,12,10,6, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
+  fc(px,W,12,12,7, 56,126,60);
+  fc(px,W,9,11,5, P.fiberStem[0],P.fiberStem[1],P.fiberStem[2]);
+  fc(px,W,14,9,6, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
+  line(px,W,7,15,5,7, 76,134,62);
+  line(px,W,13,16,14,4, 82,146,68);
+  line(px,W,17,15,20,8, 74,130,60);
   // little fibers sticking out
   sp(px,W,5,7, 200,210,140); sp(px,W,6,8, 200,210,140);
   sp(px,W,18,9, 200,210,140); sp(px,W,17,10, 200,210,140);
@@ -411,7 +499,7 @@ function genFiber(){
 }
 function genRuinWall(){
   const W=32,H=40, px=blankPx(W,H);
-  fr(px,W,4,36,24,2, 30,30,34,180);
+  fe(px,W,16,37,13,2, 30,30,34,150);
   // broken column
   fr(px,W,8,8,16,28, P.ruinWall[0],P.ruinWall[1],P.ruinWall[2]);
   fr(px,W,8,8,16,2, P.ruinWall2[0],P.ruinWall2[1],P.ruinWall2[2]);
@@ -424,8 +512,14 @@ function genRuinWall(){
   sp(px,W,10,28, P.ruinMoss[0],P.ruinMoss[1],P.ruinMoss[2]);
   sp(px,W,14,26, P.ruinMoss[0],P.ruinMoss[1],P.ruinMoss[2]);
   sp(px,W,20,28, P.ruinMoss[0],P.ruinMoss[1],P.ruinMoss[2]);
+  line(px,W,11,29,11,35, 46,104,56);
+  line(px,W,20,26,19,34, 46,104,56);
+  sp(px,W,12,31, 150,196,96);
+  sp(px,W,18,30, 150,196,96);
   // broken top
   fr(px,W,18,4,6,4, P.ruinWall[0],P.ruinWall[1],P.ruinWall[2]);
+  fr(px,W,8,6,6,2, P.ruinWall[0],P.ruinWall[1],P.ruinWall[2]);
+  sp(px,W,22,7, 188,190,190);
   return makePNG(W,H,px);
 }
 
@@ -493,15 +587,15 @@ function genGenOn(){
 // ─── Placeables (32×32) ───────────────────────────────────────────────────────
 function genCampfire(){
   const W=32,H=32, px=blankPx(W,H);
-  fr(px,W,6,26,20,2, 20,18,16,180);
+  fe(px,W,16,27,11,2, 20,18,16,150);
   // stones ring
   fc(px,W,8,22,3, P.rock[0],P.rock[1],P.rock[2]);
   fc(px,W,24,22,3, P.rock[0],P.rock[1],P.rock[2]);
   fc(px,W,16,26,3, P.rock[0],P.rock[1],P.rock[2]);
   fc(px,W,16,18,3, P.rock[0],P.rock[1],P.rock[2]);
   // logs
-  fr(px,W,10,20,12,2, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,12,18,8,2, P.woodLight[0],P.woodLight[1],P.woodLight[2]);
+  line(px,W,9,22,22,18, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,10,18,23,23, P.woodLight[0],P.woodLight[1],P.woodLight[2]);
   // flame
   fc(px,W,16,14,4, 230,90,30);
   fc(px,W,16,12,3, 250,170,50);
@@ -512,10 +606,11 @@ function genCampfire(){
 }
 function genChest(){
   const W=32,H=32, px=blankPx(W,H);
-  fr(px,W,4,28,24,2, 20,18,16,180);
-  fr(px,W,4,12,24,16, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,4,12,24,2, P.woodLight[0],P.woodLight[1],P.woodLight[2]);
-  fr(px,W,4,16,24,1, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fe(px,W,16,29,13,2, 20,18,16,150);
+  fr(px,W,4,13,24,15, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  fr(px,W,5,12,22,5, P.woodLight[0],P.woodLight[1],P.woodLight[2]);
+  fr(px,W,5,16,22,1, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  for(let x=7;x<27;x+=6) line(px,W,x,13,x,27, 76,46,30);
   // metal bands
   fr(px,W,4,20,24,2, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
   fr(px,W,4,24,24,2, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
@@ -527,11 +622,13 @@ function genChest(){
 }
 function genWaterTank(){
   const W=32,H=40, px=blankPx(W,H);
-  fr(px,W,6,36,20,2, 20,18,16,180);
+  fe(px,W,16,37,11,2, 20,18,16,150);
   // tank body
   fr(px,W,6,12,20,24, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
   fr(px,W,6,12,20,2, P.scrap[0],P.scrap[1],P.scrap[2]);
   fr(px,W,6,12,2,24, P.scrap2[0]-10,P.scrap2[1]-10,P.scrap2[2]-10);
+  fr(px,W,24,14,1,20, 62,64,66);
+  for(let y=18;y<34;y+=7) fr(px,W,7,y,18,1, 146,138,120);
   // water gauge
   fr(px,W,12,16,8,16, 60,90,120);
   fr(px,W,13,18,6,12, 120,170,210);
@@ -546,9 +643,11 @@ function genWaterTank(){
 }
 function genSmallGen(){
   const W=32,H=32, px=blankPx(W,H);
-  fr(px,W,4,28,24,2, 20,18,16,180);
+  fe(px,W,16,29,13,2, 20,18,16,150);
   fr(px,W,4,10,24,18, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
   fr(px,W,4,10,24,2, P.scrap[0],P.scrap[1],P.scrap[2]);
+  fr(px,W,5,11,1,16, 64,64,68);
+  fr(px,W,26,12,1,15, 52,54,60);
   // panel
   fr(px,W,8,14,16,10, 40,46,54);
   // dials
@@ -566,42 +665,55 @@ function genSmallGen(){
 function genPlanter(){
   // empty planter tile 32x32
   const W=32,H=32, px=blankPx(W,H);
-  fr(px,W,2,2,28,28, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,2,2,28,2, P.woodLight[0],P.woodLight[1],P.woodLight[2]);
-  fr(px,W,2,2,2,28, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  fr(px,W,28,2,2,28, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  fr(px,W,4,4,24,24, P.soilTill[0],P.soilTill[1],P.soilTill[2]);
-  for(let y=4;y<28;y++) for(let x=4;x<28;x++){
+  fe(px,W,16,30,14,2, 20,18,16,120);
+  fr(px,W,2,4,28,25, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  fr(px,W,2,4,28,3, P.woodLight[0],P.woodLight[1],P.woodLight[2]);
+  fr(px,W,2,4,2,25, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,28,4,2,25, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,5,7,22,20, P.soilTill[0],P.soilTill[1],P.soilTill[2]);
+  for(let row=10; row<26; row+=5){
+    for(let x=6; x<26; x++){
+      const wiggle = (noise2(x,row)%5)===0 ? 1 : 0;
+      sp(px,W,x,row+wiggle, 48,30,22);
+      if(x%2===0) sp(px,W,x,row+1+wiggle, 128,84,54);
+    }
+  }
+  for(let y=7;y<27;y++) for(let x=5;x<27;x++){
     const n=noise2(x,y)%8;
     if(n<2) sp(px,W,x,y, P.soilTill2[0],P.soilTill2[1],P.soilTill2[2]);
   }
+  fr(px,W,4,6,24,2, 190,126,66);
+  outline(px,W,2,4,28,25, 54,32,22);
   return makePNG(W,H,px);
 }
 function genWallTile(){
   const W=32,H=32, px=blankPx(W,H);
-  fr(px,W,0,0,W,H, 80,80,90);
-  outline(px,W,0,0,W,H, 40,40,50);
+  fr(px,W,0,0,W,H, 108,104,100);
+  outline(px,W,0,0,W,H, 54,50,52);
   // bricks
   for(let y=0;y<H;y+=8){
-    for(let x=0;x<W;x++) sp(px,W,x,y, 40,40,50);
+    for(let x=0;x<W;x++) sp(px,W,x,y, 62,58,60);
     const off = (y/8)%2===0 ? 0 : 16;
-    sp(px,W,off,y+4,40,40,50);
-    sp(px,W,off+16,y+4,40,40,50);
+    sp(px,W,off,y+4,62,58,60);
+    sp(px,W,off+16,y+4,62,58,60);
     for(let yy=y+1;yy<y+8 && yy<H;yy++){
-      sp(px,W,off, yy, 60,60,70);
+      sp(px,W,off, yy, 78,74,76);
     }
   }
+  [[4,3],[18,12],[27,24]].forEach(([x,y])=>sp(px,W,x,y, 146,142,132));
   return makePNG(W,H,px);
 }
 function genFloorTile(){
   // Simple buildable floor (warm wood plank)
   const W=32,H=32, px=blankPx(W,H);
-  fr(px,W,0,0,W,H, 120,90,60);
+  fr(px,W,0,0,W,H, 146, 94, 50);
   for(let y=0;y<H;y+=8){
-    for(let x=0;x<W;x++) sp(px,W,x,y, 80,60,40);
+    for(let x=0;x<W;x++) sp(px,W,x,y, 82,52,32);
+    for(let x=0;x<W;x+=11) sp(px,W,x,y+4, 82,52,32);
   }
   for(let x=0;x<W;x++) for(let y=0;y<H;y++){
-    if(noise2(x,y)%14===0) sp(px,W,x,y, 90,70,50);
+    if(noise2(x,y)%14===0) sp(px,W,x,y, 106,68,42);
+    if(noise2(x+5,y)%31===0) sp(px,W,x,y, 190,128,68);
   }
   outline(px,W,0,0,W,H, 60,46,30);
   return makePNG(W,H,px);
@@ -609,7 +721,7 @@ function genFloorTile(){
 
 // ─── Crops (16x16, 4 stages × 3 types) ────────────────────────────────────────
 function drawSeed(px,W,ox,oy){
-  fr(px,W,ox+6,oy+12,4,2, P.soilTill2[0]-10,P.soilTill2[1]-10,P.soilTill2[2]-10);
+  fe(px,W,ox+8,oy+13,4,1, P.soilTill2[0]-10,P.soilTill2[1]-10,P.soilTill2[2]-10);
   sp(px,W,ox+7,oy+11, 180,180,140);
   sp(px,W,ox+8,oy+11, 200,200,160);
 }
@@ -619,12 +731,14 @@ function drawSprout(px,W,ox,oy){
   sp(px,W,ox+9,oy+11, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
   sp(px,W,ox+7,oy+9, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
   sp(px,W,ox+8,oy+9, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
+  sp(px,W,ox+8,oy+8, 186,226,122);
 }
 function drawMidGrowth(px,W,ox,oy, leafCol){
   fr(px,W,ox+7,oy+6,2,9, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
   fc(px,W,ox+8,oy+6,3, leafCol[0],leafCol[1],leafCol[2]);
   fc(px,W,ox+5,oy+9,2, leafCol[0],leafCol[1],leafCol[2]);
   fc(px,W,ox+11,oy+9,2, leafCol[0],leafCol[1],leafCol[2]);
+  sp(px,W,ox+7,oy+4, shade(leafCol,32)[0],shade(leafCol,32)[1],shade(leafCol,32)[2]);
 }
 function drawHarvestPotato(px,W,ox,oy){
   fr(px,W,ox+7,oy+8,2,7, P.fiberStem[0],P.fiberStem[1],P.fiberStem[2]);
@@ -633,6 +747,7 @@ function drawHarvestPotato(px,W,ox,oy){
   fc(px,W,ox+11,oy+8,2, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
   fc(px,W,ox+8,oy+12,2, 200,160,120);  // potato peeking
   sp(px,W,ox+9,oy+11, 220,180,140);
+  sp(px,W,ox+6,oy+6, 190,228,116);
 }
 function drawHarvestWheat(px,W,ox,oy){
   for(let i=0;i<3;i++){
@@ -641,6 +756,7 @@ function drawHarvestWheat(px,W,ox,oy){
     sp(px,W,x-1,oy+7, 240,220,120);
     sp(px,W,x+1,oy+7, 240,220,120);
     sp(px,W,x,oy+5, 240,220,120);
+    sp(px,W,x,oy+4, 255,238,150);
   }
 }
 function drawHarvestMushroom(px,W,ox,oy){
