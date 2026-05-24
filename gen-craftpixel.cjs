@@ -198,45 +198,127 @@ console.log(`ground_grass    : ${ground.w}×${ground.h}`);
 console.log('');
 
 // ─── Trees ───────────────────────────────────────────────────────────────────
-// Trees_animation.png — 12 cols of 48 px → 6 trees/row (each tree = 96 px wide)
-//   Row 0 (y=0):   first set of tree variants, frame 0 (idle)
-//   Use first two cols (0-95) for tree_lush.
-//   Use cols 2-3 (96-191) as a second lush variant, or try a row offset for dead.
+// Trees_animation.png (576×1040) — 12 cols of 48 px, rows of 80 px
+//   Each tree = 2 cols = 96 px wide. 6 trees per row, 13 animation rows.
+//   Row 0 (y=0): static/idle frame for all 6 tree variants — ALL lush green apple trees.
+//   The craftpixel pack has NO dead/bare tree — tree_dead must be supplied externally.
 console.log('── trees');
 
-// Lush tree: column group 0 (x=0..95), row 0 (y=0..79)
+// Lush tree: column group 0 (x=0..95), row 0 (y=0..79) — confirmed lush apple tree ✓
 const treeLushRaw = extract(trees, 0, 0, 96, 80);
 emit('tree_lush.png', treeLushRaw);
 
-// Dead tree: column group 2 (x=192..287), row 0
-// If this still looks lush, try x=288 or x=384 for a sparser variant.
-const treeDeadRaw = extract(trees, 192, 0, 96, 80);
-emit('tree_dead.png', treeDeadRaw);
+// tree_dead.png: craftpixel has no bare/dead tree — draw procedurally.
+// Style matches the pixel art reference: brown trunk ~6px wide, bare upswept branches,
+// orange highlights, dark outline.  48×80 px (same canvas as tree_lush for consistency).
+(function drawDeadTree(){
+  const W = 48, H = 80;
+  const px = Buffer.alloc(W * H * 4); // transparent
+
+  function dot(x, y, r, g, b, a=255){
+    if (x<0||y<0||x>=W||y>=H) return;
+    const i=(y*W+x)*4; px[i]=r; px[i+1]=g; px[i+2]=b; px[i+3]=a;
+  }
+  function rect(x, y, w, h, r, g, b){
+    for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++) dot(x+dx,y+dy,r,g,b);
+  }
+  // Bresenham line
+  function ln(x0,y0,x1,y1,r,g,b,thick=1){
+    let dx=Math.abs(x1-x0),sx=x0<x1?1:-1,dy=-Math.abs(y1-y0),sy=y0<y1?1:-1,err=dx+dy;
+    while(true){
+      for(let ty=-Math.floor(thick/2);ty<=Math.floor(thick/2);ty++)
+        for(let tx=-Math.floor(thick/2);tx<=Math.floor(thick/2);tx++)
+          dot(x0+tx,y0+ty,r,g,b);
+      if(x0===x1&&y0===y1) break;
+      const e2=2*err;
+      if(e2>=dy){err+=dy;x0+=sx;}
+      if(e2<=dx){err+=dx;y0+=sy;}
+    }
+  }
+
+  const DARK  = [72, 38, 14];   // very dark brown (outline/shadow)
+  const MID   = [112, 58, 22];  // mid brown (main trunk)
+  const LIGHT = [155, 88, 38];  // lighter brown (highlight)
+  const WARM  = [190,110, 45];  // warm orange-brown (edge highlight)
+
+  const cx = 24; // trunk center X
+
+  // ── Ground roots / base (y 72-79)
+  ln(cx-4, 79, cx-7, 73, DARK[0],DARK[1],DARK[2], 2);
+  ln(cx+4, 79, cx+7, 73, DARK[0],DARK[1],DARK[2], 2);
+  ln(cx-1, 79, cx-1, 73, MID[0],MID[1],MID[2], 2);
+  ln(cx+1, 79, cx+2, 73, MID[0],MID[1],MID[2], 2);
+
+  // ── Main trunk (y 20-73), 5px wide with shading
+  rect(cx-3, 20, 6, 53, DARK[0],DARK[1],DARK[2]);   // shadow left edge
+  rect(cx-2, 20, 4, 53, MID[0],MID[1],MID[2]);       // mid body
+  rect(cx,   20, 2, 53, LIGHT[0],LIGHT[1],LIGHT[2]); // highlight right
+
+  // ── Large branch LEFT  (y≈35, goes out-left then up)
+  ln(cx-2, 45, cx-12, 38, DARK[0],DARK[1],DARK[2], 2);
+  ln(cx-2, 45, cx-11, 37, MID[0],MID[1],MID[2], 2);
+  ln(cx-11,37, cx-10, 28, MID[0],MID[1],MID[2], 2);
+  // twig tips left
+  ln(cx-10,28, cx-14, 22, DARK[0],DARK[1],DARK[2]);
+  ln(cx-10,28, cx-6,  20, MID[0],MID[1],MID[2]);
+  ln(cx-14,22, cx-16, 18, DARK[0],DARK[1],DARK[2]);
+
+  // ── Large branch RIGHT (y≈30, goes out-right then up)
+  ln(cx+2, 38, cx+13, 30, DARK[0],DARK[1],DARK[2], 2);
+  ln(cx+2, 38, cx+12, 29, MID[0],MID[1],MID[2], 2);
+  ln(cx+12,29, cx+11, 20, MID[0],MID[1],MID[2], 2);
+  // twig tips right
+  ln(cx+11,20, cx+16, 14, DARK[0],DARK[1],DARK[2]);
+  ln(cx+11,20, cx+7,  13, MID[0],MID[1],MID[2]);
+  ln(cx+16,14, cx+18, 10, DARK[0],DARK[1],DARK[2]);
+
+  // ── Mid branch LEFT (y≈28)
+  ln(cx-2, 30, cx-8,  24, MID[0],MID[1],MID[2]);
+  ln(cx-8, 24, cx-11, 18, DARK[0],DARK[1],DARK[2]);
+  ln(cx-8, 24, cx-5,  17, MID[0],MID[1],MID[2]);
+
+  // ── Top of trunk splits into two leaders
+  ln(cx-1, 20, cx-3, 10, MID[0],MID[1],MID[2], 2);
+  ln(cx+1, 20, cx+3, 10, MID[0],MID[1],MID[2]);
+  ln(cx-3, 10, cx-4,  4, DARK[0],DARK[1],DARK[2]);
+  ln(cx-3, 10, cx-1,  5, MID[0],MID[1],MID[2]);
+  ln(cx+3, 10, cx+5,  4, DARK[0],DARK[1],DARK[2]);
+
+  // ── Warm highlight flecks on trunk edges
+  for(let y=22;y<70;y+=4) dot(cx+2,y, WARM[0],WARM[1],WARM[2]);
+  for(let y=25;y<60;y+=6) dot(cx-3,y, DARK[0],DARK[1],DARK[2]);
+
+  writePNG(path.join(OUT,'tree_dead.png'), W, H, px);
+  console.log('  drew tree_dead.png procedurally (48×80, bare brown trunk)');
+})();
 
 // ─── Rock ────────────────────────────────────────────────────────────────────
-// exterior.png — 16-px tile grid
-//   Large boulders start around y=624; pick a 3×3-tile (48×48) region.
-//   If this looks wrong, adjust: y=640 for the second boulder row, or
-//   try y=720 for a smaller 2×2-tile (32×32) rock.
+// exterior.png (240×800) — 16-px tile grid, confirmed layout:
+//   r41-44 (y=656..703): Large rounded beige/grey boulders, 4×4 tiles = 64×64 px
+//   r45-47 (y=720..751): Medium grey-brown stone chunks, 3×3 tiles = 48×48 px
+//   r48-49 (y=768..783): Small blue-grey pointed rocks, clusters of 4
+//   r25-28 (y=400..447): Brown earthen rock piles (for ruins/rubble)
+//   r11-16 (y=176..255): Large round green bushes (perfect for fiber)
+//   r17-18 (y=272..287): Tree stumps (for post-harvest)
 console.log('── rocks / props');
 
-const rock48 = extract(ext, 0, 624, 48, 48);
-emit('rock.png', rock48);
+// Large boulder (r41-44): x=0, y=656, 64×64 — the main "rock" resource node
+const rockRaw = extract(ext, 0, 656, 64, 64);
+emit('rock.png', rockRaw);
 
-// Ruin wall: pull a 48×32 stone-ruin section.
-// In exterior.png ruins/walls tend to be in the mid-section around y=320-400.
-// Try y=336 for a crumbled stone section (3×2 tiles).
-const ruinRaw = extract(ext, 0, 336, 48, 32);
+// Ruin wall: use the brown earthen rock rubble pile at r25-28 (y=400, 48×48)
+// Looks like crumbled stone/ruins — 3×3 tile region.
+const ruinRaw = extract(ext, 0, 400, 48, 48);
 emit('ruin_wall.png', ruinRaw);
 
-// Fiber/bush: round shrubs typically sit around y=192 in exterior.png.
-// 2×2 tiles = 32×32 px.
-const fiberRaw = extract(ext, 0, 192, 32, 32);
+// Fiber/bush: large round green bush at r11-14 (y=176, 64×64) — confirmed ✓
+// Two overlapping round canopies; looks like a wild shrub perfect for fiber.
+const fiberRaw = extract(ext, 0, 176, 64, 64);
 emit('fiber.png', fiberRaw);
 
-// Scrap pile: look around y=240 (misc debris area) — 2×2 tiles.
-// If this is wrong, try y=256 or y=288.
-const scrapRaw = extract(ext, 32, 240, 32, 32);
+// Scrap pile: small brown pebble cluster at r7 (y=112) — closest to debris in this pack.
+// 3×2 tile region (48×32). For better scrap art supply a custom sprite.
+const scrapRaw = extract(ext, 80, 112, 48, 32);
 emit('scrap.png', scrapRaw);
 
 // ─── Walls / floors ──────────────────────────────────────────────────────────
