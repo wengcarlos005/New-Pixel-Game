@@ -311,10 +311,79 @@ emit('rock.png', rockRaw);
 const ruinRaw = extract(ext, 0, 400, 48, 48);
 emit('ruin_wall.png', ruinRaw);
 
-// Fiber/bush: large round green bush at r11-14 (y=176, 64×64) — confirmed ✓
-// Two overlapping round canopies; looks like a wild shrub perfect for fiber.
-const fiberRaw = extract(ext, 0, 176, 64, 64);
-emit('fiber.png', fiberRaw);
+// Fiber: draw procedural spiky wild-plant sprite matching the reference icon.
+// Style: dense radiating pointed leaves, dark-to-bright green, 48×48.
+(function drawFiber(){
+  const W = 48, H = 48;
+  const px = Buffer.alloc(W * H * 4);
+
+  function dot(x, y, r, g, b, a=255){
+    if(x<0||y<0||x>=W||y>=H) return;
+    const i=(y*W+x)*4; px[i]=r; px[i+1]=g; px[i+2]=b; px[i+3]=a;
+  }
+  function ln(x0,y0,x1,y1,r,g,b,thick=1){
+    let dx=Math.abs(x1-x0),sx=x0<x1?1:-1,dy=-Math.abs(y1-y0),sy=y0<y1?1:-1,err=dx+dy;
+    for(;;){
+      for(let ty=-Math.floor(thick/2);ty<=Math.floor(thick/2);ty++)
+        for(let tx=-Math.floor(thick/2);tx<=Math.floor(thick/2);tx++)
+          dot(x0+tx,y0+ty,r,g,b);
+      if(x0===x1&&y0===y1) break;
+      const e2=2*err;
+      if(e2>=dy){err+=dy;x0+=sx;}
+      if(e2<=dx){err+=dx;y0+=sy;}
+    }
+  }
+
+  const D1=[10, 40, 10];    // very dark green
+  const D2=[18, 72, 18];    // dark green
+  const M =[32,120, 32];    // mid green
+  const L =[56,168, 48];    // bright green
+  const TIP=[88,210, 60];   // light tip
+
+  const cx=24, cy=28; // plant base slightly below center
+
+  // ── Ground cluster of stems
+  ln(cx-3,H-1,cx-4,cy+6, D1[0],D1[1],D1[2],2);
+  ln(cx,  H-1,cx,  cy+4, D2[0],D2[1],D2[2],2);
+  ln(cx+3,H-1,cx+4,cy+6, D1[0],D1[1],D1[2],2);
+
+  // ── Helper: draw one spiky leaf arm (base→mid→tip with 3 segments)
+  function spike(bx,by, mx,my, tx,ty, thick){
+    ln(bx,by,mx,my, D2[0],D2[1],D2[2],thick);
+    ln(mx,my,tx,ty, M[0],M[1],M[2],Math.max(1,thick-1));
+    dot(tx,ty, TIP[0],TIP[1],TIP[2]);
+    // add a parallel highlight pixel along each segment
+    dot(Math.round((bx+mx)/2)+1, Math.round((by+my)/2), L[0],L[1],L[2]);
+    dot(Math.round((mx+tx)/2),   Math.round((my+ty)/2)-1, L[0],L[1],L[2]);
+  }
+
+  // 12 leaf arms radiating from the plant center
+  const arms = [
+    // [bx,by, mx,my, tx,ty, thick]
+    [cx,cy, cx-2,cy-8,  cx-4,cy-16, 3],  // top-left big
+    [cx,cy, cx+2,cy-8,  cx+5,cy-16, 3],  // top-right big
+    [cx,cy, cx-8,cy-4,  cx-16,cy-6, 2],  // far left
+    [cx,cy, cx+8,cy-4,  cx+16,cy-6, 2],  // far right
+    [cx,cy, cx-6,cy-6,  cx-11,cy-13,2],  // upper-left mid
+    [cx,cy, cx+6,cy-6,  cx+11,cy-13,2],  // upper-right mid
+    [cx,cy, cx-4,cy-2,  cx-14,cy-2, 2],  // left flat
+    [cx,cy, cx+4,cy-2,  cx+14,cy-2, 2],  // right flat
+    [cx,cy, cx-8,cy+2,  cx-15,cy+6, 2],  // lower-left droop
+    [cx,cy, cx+8,cy+2,  cx+15,cy+6, 2],  // lower-right droop
+    [cx,cy, cx-1,cy-4,  cx-3,cy-20, 2],  // tall center-left
+    [cx,cy, cx+1,cy-4,  cx+3,cy-20, 2],  // tall center-right
+  ];
+  arms.forEach(([bx,by,mx,my,tx,ty,th]) => spike(bx,by,mx,my,tx,ty,th));
+
+  // ── Inner fill to make it look dense (dark green clump around base)
+  for(let dy=-5;dy<=5;dy++) for(let dx=-5;dx<=5;dx++){
+    if(dx*dx+dy*dy<=9) dot(cx+dx,cy+dy, D2[0],D2[1],D2[2]);
+    if(dx*dx+dy*dy<=4) dot(cx+dx,cy+dy, M[0],M[1],M[2]);
+  }
+
+  writePNG(path.join(OUT,'fiber.png'), W, H, px);
+  console.log('  drew fiber.png procedurally (48×48, spiky plant)');
+})();
 
 // Scrap pile: small brown pebble cluster at r7 (y=112) — closest to debris in this pack.
 // 3×2 tile region (48×32). For better scrap art supply a custom sprite.
@@ -341,6 +410,149 @@ emit('floor_tile.png', floorRaw);
 // gen.cjs procedural fallbacks remain for: generator_broken, generator_on, campfire,
 // chest, water_tank, small_gen, planter.
 
+// ─── Title background (960×540 post-apocalyptic night scene) ──────────────────
+console.log('── title_bg');
+(function drawTitleBg(){
+  const W = 960, H = 540;
+  const px = Buffer.alloc(W * H * 4);
+
+  function dot(x,y,r,g,b,a=255){
+    if(x<0||y<0||x>=W||y>=H) return;
+    const i=(y*W+x)*4; px[i]=r;px[i+1]=g;px[i+2]=b;px[i+3]=a;
+  }
+  function rect(x,y,w,h,r,g,b,a=255){
+    for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++) dot(x+dx,y+dy,r,g,b,a);
+  }
+  function hline(y,r,g,b){ for(let x=0;x<W;x++) dot(x,y,r,g,b); }
+
+  // ── Sky gradient: near-black top → deep navy bottom half
+  for(let y=0;y<H;y++){
+    const t=y/H;
+    const r=Math.round(4 + t*12);
+    const g=Math.round(4 + t*14);
+    const b=Math.round(14 + t*30);
+    hline(y,r,g,b);
+  }
+
+  // ── Moon — large, dim, top-right
+  const mx=820, my=90, mr=52;
+  for(let dy=-mr;dy<=mr;dy++) for(let dx=-mr;dx<=mr;dx++){
+    if(dx*dx+dy*dy<=mr*mr){
+      const dist=Math.sqrt(dx*dx+dy*dy)/mr;
+      const brightness=Math.round(180-dist*60);
+      dot(mx+dx,my+dy, brightness,brightness,brightness-20);
+    }
+  }
+  // Moon shadow crescent (slightly shifted dark circle)
+  const mox=18, moy=10, mcr=mr-4;
+  for(let dy=-mcr;dy<=mcr;dy++) for(let dx=-mcr;dx<=mcr;dx++){
+    if(dx*dx+dy*dy<=mcr*mcr) dot(mx+mox+dx,my+moy+dy, 10,12,28);
+  }
+
+  // ── Stars
+  const starPos=[[120,30],[200,55],[340,18],[480,40],[600,22],[700,48],[160,80],[440,70],
+    [720,35],[760,90],[850,140],[50,60],[280,100],[900,50],[920,110],[640,85],[380,60]];
+  starPos.forEach(([sx,sy])=>{
+    const s=Math.random()<0.5?1:2;
+    dot(sx,sy,220,220,200); if(s===2){dot(sx-1,sy,160,160,140);dot(sx+1,sy,160,160,140);}
+  });
+
+  // ── Distant ruined building silhouettes (y=240-420)
+  function buildingBlock(bx,bw,bh,floors=1){
+    // Main block
+    const by=H-bh-80;
+    rect(bx,by, bw,bh, 8,9,14);
+    // Windows (dark slightly lighter)
+    const winRows=Math.floor(bh/24), winCols=Math.floor(bw/18);
+    for(let wr=0;wr<winRows;wr++) for(let wc=0;wc<winCols;wc++){
+      const wx=bx+wc*18+5, wy=by+wr*24+6;
+      const lit=Math.random()<0.15;
+      if(lit) rect(wx,wy,8,10, 120,90,40);
+      else    rect(wx,wy,8,10, 14,15,24);
+    }
+  }
+  // Background buildings (lighter, further)
+  buildingBlock(40,  60,160);
+  buildingBlock(100,  40,120);
+  buildingBlock(140,  80,200);
+  buildingBlock(220,  50,140);
+  buildingBlock(260,  70,170);
+  buildingBlock(330,  45,110);
+  buildingBlock(370,  90,240);
+  buildingBlock(460,  55,130);
+  buildingBlock(510,  80,180);
+  buildingBlock(590,  50,150);
+  buildingBlock(640,  70,190);
+  buildingBlock(710,  40,120);
+  buildingBlock(750,  90,210);
+  buildingBlock(840,  55,145);
+  buildingBlock(900,  60,165);
+
+  // Foreground ruined walls (jagged tops, at bottom)
+  const wallY=H-90;
+  function ruinWall(x,ww,wh){
+    // Base block
+    rect(x,wallY-wh,ww,wh, 10,11,16);
+    // Jagged top
+    for(let dx=0;dx<ww;dx+=4){
+      const jag=Math.floor(Math.random()*12);
+      rect(x+dx,wallY-wh-jag,3,jag,10,11,16);
+    }
+    // Wall texture
+    for(let dy=2;dy<wh;dy+=8) for(let dx=1;dx<ww;dx+=12){
+      rect(x+dx,wallY-wh+dy,10,2, 8,9,14);
+    }
+  }
+  ruinWall(0,   140, 60);
+  ruinWall(150,  80, 45);
+  ruinWall(240, 110, 70);
+  ruinWall(400,  90, 55);
+  ruinWall(520, 130, 65);
+  ruinWall(680, 100, 50);
+  ruinWall(810, 150, 75);
+
+  // ── Dead tree silhouettes on sides
+  function deadTree(tx,ty,h,spread){
+    // trunk
+    for(let dy=0;dy<h;dy++) dot(tx,ty-dy,22,16,10);
+    // branches
+    for(let i=1;i<=4;i++){
+      const brY=ty-Math.round(h*(0.3+i*0.12));
+      const dir=i%2===0?1:-1;
+      for(let d=0;d<spread-i*4;d++){
+        dot(tx+dir*d,brY-Math.round(d*0.4),22,16,10);
+        if(d>spread/3) dot(tx+dir*d,brY-Math.round(d*0.5)-d/4,16,12,8);
+      }
+    }
+  }
+  deadTree(80, H-85, 130, 50);
+  deadTree(30, H-85, 90, 38);
+  deadTree(880,H-85, 140, 52);
+  deadTree(930,H-85, 100, 40);
+
+  // ── Overgrown vegetation strip at very bottom
+  for(let y=H-82;y<H;y++) for(let x=0;x<W;x++){
+    const t=(y-(H-82))/82;
+    const r=Math.round(6+t*8), g=Math.round(18+t*24), b=Math.round(8+t*10);
+    dot(x,y,r,g,b);
+  }
+  // Grass tufts
+  function tuft(tx,ty,c){ for(let d=-3;d<=3;d++) for(let k=0;k<5+Math.abs(d);k++) dot(tx+d,ty-k,c[0],c[1],c[2]);}
+  const GT=[18,52,16];
+  for(let t=0;t<W;t+=14+Math.round(Math.random()*12)) tuft(t, H-82+Math.round(Math.random()*6), GT);
+
+  // ── Ambient haze/fog near horizon (y=H-90 band)
+  for(let y=wallY-20;y<wallY+10;y++) for(let x=0;x<W;x++){
+    const a=Math.round(18*(1-Math.abs(y-(wallY-5))/25));
+    const ci=(y*W+x)*4;
+    px[ci]=Math.min(255,px[ci]+a); px[ci+1]=Math.min(255,px[ci+1]+a); px[ci+2]=Math.min(255,px[ci+2]+a+6);
+    px[ci+3]=255;
+  }
+
+  writePNG(path.join(OUT,'title_bg.png'), W, H, px);
+  console.log(`  drew title_bg.png (${W}×${H}, post-apoc night scene)`);
+})();
+
 console.log('\nDone! Re-run "npm run gen" only if you also want to refresh the terrain/crop sheets.');
 console.log('The replaced assets (tree_lush, tree_dead, rock, fiber, scrap, ruin_wall,');
-console.log('wall_tile, floor_tile) are written directly to public/assets/.');
+console.log('wall_tile, floor_tile, title_bg) are written directly to public/assets/.');
