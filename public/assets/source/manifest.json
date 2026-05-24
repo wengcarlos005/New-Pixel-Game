@@ -1,0 +1,295 @@
+{
+  "note": "Source PNGs generated one-by-one. Runtime sheets such as terrain.png, crops.png, and icons.png are packed from these stable asset slots for Phaser.",
+  "tileSize": 32,
+  "cropSize": 16,
+  "iconSize": 16,
+  "tiles": [
+    {
+      "index": 0,
+      "key": "grass_dry",
+      "file": "tiles/00_grass_dry.png"
+    },
+    {
+      "index": 1,
+      "key": "grass_lush",
+      "file": "tiles/01_grass_lush.png"
+    },
+    {
+      "index": 2,
+      "key": "dirt",
+      "file": "tiles/02_dirt.png"
+    },
+    {
+      "index": 3,
+      "key": "soil_till",
+      "file": "tiles/03_soil_till.png"
+    },
+    {
+      "index": 4,
+      "key": "soil_wet",
+      "file": "tiles/04_soil_wet.png"
+    },
+    {
+      "index": 5,
+      "key": "water_bad",
+      "file": "tiles/05_water_bad.png"
+    },
+    {
+      "index": 6,
+      "key": "water_clean",
+      "file": "tiles/06_water_clean.png"
+    },
+    {
+      "index": 7,
+      "key": "gravel_path",
+      "file": "tiles/07_gravel_path.png"
+    },
+    {
+      "index": 8,
+      "key": "metal_floor",
+      "file": "tiles/08_metal_floor.png"
+    },
+    {
+      "index": 9,
+      "key": "metal_clean",
+      "file": "tiles/09_metal_clean.png"
+    },
+    {
+      "index": 10,
+      "key": "ash",
+      "file": "tiles/10_ash.png"
+    }
+  ],
+  "crops": [
+    {
+      "key": "potato",
+      "stage": 0,
+      "file": "crops/potato_0.png"
+    },
+    {
+      "key": "potato",
+      "stage": 1,
+      "file": "crops/potato_1.png"
+    },
+    {
+      "key": "potato",
+      "stage": 2,
+      "file": "crops/potato_2.png"
+    },
+    {
+      "key": "potato",
+      "stage": 3,
+      "file": "crops/potato_3.png"
+    },
+    {
+      "key": "wheat",
+      "stage": 0,
+      "file": "crops/wheat_0.png"
+    },
+    {
+      "key": "wheat",
+      "stage": 1,
+      "file": "crops/wheat_1.png"
+    },
+    {
+      "key": "wheat",
+      "stage": 2,
+      "file": "crops/wheat_2.png"
+    },
+    {
+      "key": "wheat",
+      "stage": 3,
+      "file": "crops/wheat_3.png"
+    },
+    {
+      "key": "mushroom",
+      "stage": 0,
+      "file": "crops/mushroom_0.png"
+    },
+    {
+      "key": "mushroom",
+      "stage": 1,
+      "file": "crops/mushroom_1.png"
+    },
+    {
+      "key": "mushroom",
+      "stage": 2,
+      "file": "crops/mushroom_2.png"
+    },
+    {
+      "key": "mushroom",
+      "stage": 3,
+      "file": "crops/mushroom_3.png"
+    }
+  ],
+  "icons": [
+    {
+      "index": 0,
+      "key": "wood",
+      "file": "icons/00_wood.png"
+    },
+    {
+      "index": 1,
+      "key": "scrap",
+      "file": "icons/01_scrap.png"
+    },
+    {
+      "index": 2,
+      "key": "stone",
+      "file": "icons/02_stone.png"
+    },
+    {
+      "index": 3,
+      "key": "fiber",
+      "file": "icons/03_fiber.png"
+    },
+    {
+      "index": 4,
+      "key": "water",
+      "file": "icons/04_water.png"
+    },
+    {
+      "index": 5,
+      "key": "seed_potato",
+      "file": "icons/05_seed_potato.png"
+    },
+    {
+      "index": 6,
+      "key": "seed_wheat",
+      "file": "icons/06_seed_wheat.png"
+    },
+    {
+      "index": 7,
+      "key": "seed_mushroom",
+      "file": "icons/07_seed_mushroom.png"
+    },
+    {
+      "index": 8,
+      "key": "crop_potato",
+      "file": "icons/08_crop_potato.png"
+    },
+    {
+      "index": 9,
+      "key": "crop_wheat",
+      "file": "icons/09_crop_wheat.png"
+    },
+    {
+      "index": 10,
+      "key": "crop_mushroom",
+      "file": "icons/10_crop_mushroom.png"
+    },
+    {
+      "index": 11,
+      "key": "axe",
+      "file": "icons/11_axe.png"
+    },
+    {
+      "index": 12,
+      "key": "pickaxe",
+      "file": "icons/12_pickaxe.png"
+    },
+    {
+      "index": 13,
+      "key": "hoe",
+      "file": "icons/13_hoe.png"
+    },
+    {
+      "index": 14,
+      "key": "watering_can",
+      "file": "icons/14_watering_can.png"
+    },
+    {
+      "index": 15,
+      "key": "scythe",
+      "file": "icons/15_scythe.png"
+    },
+    {
+      "index": 16,
+      "key": "meal",
+      "file": "icons/16_meal.png"
+    },
+    {
+      "index": 17,
+      "key": "energy_cell",
+      "file": "icons/17_energy_cell.png"
+    }
+  ],
+  "objects": [
+    {
+      "key": "player",
+      "file": "objects/player.png"
+    },
+    {
+      "key": "npc_farmer",
+      "file": "objects/npc_farmer.png"
+    },
+    {
+      "key": "npc_mechanic",
+      "file": "objects/npc_mechanic.png"
+    },
+    {
+      "key": "npc_explorer",
+      "file": "objects/npc_explorer.png"
+    },
+    {
+      "key": "tree_dead",
+      "file": "objects/tree_dead.png"
+    },
+    {
+      "key": "tree_lush",
+      "file": "objects/tree_lush.png"
+    },
+    {
+      "key": "rock",
+      "file": "objects/rock.png"
+    },
+    {
+      "key": "scrap",
+      "file": "objects/scrap.png"
+    },
+    {
+      "key": "fiber",
+      "file": "objects/fiber.png"
+    },
+    {
+      "key": "ruin_wall",
+      "file": "objects/ruin_wall.png"
+    },
+    {
+      "key": "generator_broken",
+      "file": "objects/generator_broken.png"
+    },
+    {
+      "key": "generator_on",
+      "file": "objects/generator_on.png"
+    },
+    {
+      "key": "campfire",
+      "file": "objects/campfire.png"
+    },
+    {
+      "key": "chest",
+      "file": "objects/chest.png"
+    },
+    {
+      "key": "water_tank",
+      "file": "objects/water_tank.png"
+    },
+    {
+      "key": "small_gen",
+      "file": "objects/small_gen.png"
+    },
+    {
+      "key": "planter",
+      "file": "objects/planter.png"
+    },
+    {
+      "key": "wall_tile",
+      "file": "objects/wall_tile.png"
+    },
+    {
+      "key": "floor_tile",
+      "file": "objects/floor_tile.png"
+    }
+  ]
+}

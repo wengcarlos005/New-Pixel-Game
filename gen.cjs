@@ -279,6 +279,19 @@ const TILES = [
   tMetalClean,  // 9
   tAsh,         // 10
 ];
+const TILE_KEYS = [
+  'grass_dry',
+  'grass_lush',
+  'dirt',
+  'soil_till',
+  'soil_wet',
+  'water_bad',
+  'water_clean',
+  'gravel_path',
+  'metal_floor',
+  'metal_clean',
+  'ash',
+];
 
 function genTerrain() {
   const cols = TILES.length, rows = 1;
@@ -286,6 +299,11 @@ function genTerrain() {
   const px = blankPx(W,H);
   TILES.forEach((fn,i)=> fn(px,W, i*S, 0));
   return makePNG(W,H,px);
+}
+function genTilePng(i) {
+  const px = blankPx(S,S);
+  TILES[i](px,S,0,0);
+  return makePNG(S,S,px);
 }
 
 // ─── Player spritesheet ───────────────────────────────────────────────────────
@@ -807,6 +825,17 @@ function genCrops(){
   drawHarvestMushroom(px,W, 3*T,2*T);
   return makePNG(W,H,px);
 }
+const CROP_KEYS = ['potato','wheat','mushroom'];
+const CROP_DRAWERS = [
+  [drawSeed, drawSprout, (px,W,ox,oy)=>drawMidGrowth(px,W,ox,oy, P.fiberLeaf), drawHarvestPotato],
+  [drawSeed, drawSprout, (px,W,ox,oy)=>drawMidGrowth(px,W,ox,oy, [206,188,66]), drawHarvestWheat],
+  [drawSeed, drawSprout, (px,W,ox,oy)=>drawMidGrowth(px,W,ox,oy, [184,126,150]), drawHarvestMushroom],
+];
+function genCropPng(cropIndex, stage) {
+  const T=16, px=blankPx(T,T);
+  CROP_DRAWERS[cropIndex][stage](px,T,0,0);
+  return makePNG(T,T,px);
+}
 
 // ─── Items (16x16 icons) ──────────────────────────────────────────────────────
 function iWood(px,W,ox,oy){
@@ -944,6 +973,11 @@ function genIcons(){
   ICONS.forEach((fn,i)=> fn(px,W, i*T, 0));
   return makePNG(W,H,px);
 }
+function genIconPng(i) {
+  const T=16, px=blankPx(T,T);
+  ICONS[i](px,T,0,0);
+  return makePNG(T,T,px);
+}
 
 // ─── UI panels ────────────────────────────────────────────────────────────────
 function genUiSlot(){
@@ -1021,33 +1055,75 @@ function genTitleBg(){
 // ─── Write everything ─────────────────────────────────────────────────────────
 const OUT = path.join(__dirname, 'public', 'assets');
 fs.mkdirSync(OUT, { recursive: true });
+const SOURCE_OUT = path.join(OUT, 'source');
+const TILE_OUT = path.join(SOURCE_OUT, 'tiles');
+const CROP_OUT = path.join(SOURCE_OUT, 'crops');
+const ICON_OUT = path.join(SOURCE_OUT, 'icons');
+const OBJECT_OUT = path.join(SOURCE_OUT, 'objects');
+[SOURCE_OUT, TILE_OUT, CROP_OUT, ICON_OUT, OBJECT_OUT].forEach(dir => fs.mkdirSync(dir, { recursive: true }));
 
 function write(name, buf){
   fs.writeFileSync(path.join(OUT, name), buf);
   console.log('  ', name, '(', buf.length, 'bytes )');
 }
+function writeAt(dir, name, buf){
+  fs.writeFileSync(path.join(dir, name), buf);
+}
+function writeSourceAsset(group, name, buf){
+  const dir = group === 'objects' ? OBJECT_OUT : group === 'tiles' ? TILE_OUT : group === 'crops' ? CROP_OUT : ICON_OUT;
+  writeAt(dir, name, buf);
+}
 
 console.log('Generating assets to', OUT);
+TILE_KEYS.forEach((key, i) => writeSourceAsset('tiles', `${String(i).padStart(2,'0')}_${key}.png`, genTilePng(i)));
+for (let c=0;c<CROP_KEYS.length;c++) {
+  for (let s=0;s<4;s++) writeSourceAsset('crops', `${CROP_KEYS[c]}_${s}.png`, genCropPng(c,s));
+}
+ICON_KEYS.forEach((key, i) => writeSourceAsset('icons', `${String(i).padStart(2,'0')}_${key}.png`, genIconPng(i)));
+
+const objectAssets = {
+  player: genHumanSheet(PLAYER_PALETTE),
+  npc_farmer: genHumanSheet(NPC_FARMER),
+  npc_mechanic: genHumanSheet(NPC_MECHANIC),
+  npc_explorer: genHumanSheet(NPC_EXPLORER),
+  tree_dead: genDeadTree(),
+  tree_lush: genLushTree(),
+  rock: genRock(),
+  scrap: genScrap(),
+  fiber: genFiber(),
+  ruin_wall: genRuinWall(),
+  generator_broken: genBrokenGen(),
+  generator_on: genGenOn(),
+  campfire: genCampfire(),
+  chest: genChest(),
+  water_tank: genWaterTank(),
+  small_gen: genSmallGen(),
+  planter: genPlanter(),
+  wall_tile: genWallTile(),
+  floor_tile: genFloorTile(),
+};
+Object.entries(objectAssets).forEach(([key, buf]) => writeSourceAsset('objects', `${key}.png`, buf));
+
 write('terrain.png',       genTerrain());
-write('player.png',        genHumanSheet(PLAYER_PALETTE));
-write('npc_farmer.png',    genHumanSheet(NPC_FARMER));
-write('npc_mechanic.png',  genHumanSheet(NPC_MECHANIC));
-write('npc_explorer.png',  genHumanSheet(NPC_EXPLORER));
-write('tree_dead.png',     genDeadTree());
-write('tree_lush.png',     genLushTree());
-write('rock.png',          genRock());
-write('scrap.png',         genScrap());
-write('fiber.png',         genFiber());
-write('ruin_wall.png',     genRuinWall());
-write('generator_broken.png', genBrokenGen());
-write('generator_on.png',  genGenOn());
-write('campfire.png',      genCampfire());
-write('chest.png',         genChest());
-write('water_tank.png',    genWaterTank());
-write('small_gen.png',     genSmallGen());
-write('planter.png',       genPlanter());
-write('wall_tile.png',     genWallTile());
-write('floor_tile.png',    genFloorTile());
+write('player.png',        objectAssets.player);
+write('npc_farmer.png',    objectAssets.npc_farmer);
+write('npc_mechanic.png',  objectAssets.npc_mechanic);
+write('npc_explorer.png',  objectAssets.npc_explorer);
+write('tree_dead.png',     objectAssets.tree_dead);
+write('tree_lush.png',     objectAssets.tree_lush);
+write('rock.png',          objectAssets.rock);
+write('scrap.png',         objectAssets.scrap);
+write('fiber.png',         objectAssets.fiber);
+write('ruin_wall.png',     objectAssets.ruin_wall);
+write('generator_broken.png', objectAssets.generator_broken);
+write('generator_on.png',  objectAssets.generator_on);
+write('campfire.png',      objectAssets.campfire);
+write('chest.png',         objectAssets.chest);
+write('water_tank.png',    objectAssets.water_tank);
+write('small_gen.png',     objectAssets.small_gen);
+write('planter.png',       objectAssets.planter);
+write('wall_tile.png',     objectAssets.wall_tile);
+write('floor_tile.png',    objectAssets.floor_tile);
 write('crops.png',         genCrops());
 write('icons.png',         genIcons());
 write('ui_slot.png',       genUiSlot());
@@ -1059,4 +1135,14 @@ write('title_bg.png',      genTitleBg());
 
 // Save manifest of icon order so JS can lookup
 fs.writeFileSync(path.join(OUT, 'icons.json'), JSON.stringify({ order: ICON_KEYS, size: 16 }, null, 2));
+fs.writeFileSync(path.join(SOURCE_OUT, 'manifest.json'), JSON.stringify({
+  note: 'Source PNGs generated one-by-one. Runtime sheets such as terrain.png, crops.png, and icons.png are packed from these stable asset slots for Phaser.',
+  tileSize: 32,
+  cropSize: 16,
+  iconSize: 16,
+  tiles: TILE_KEYS.map((key, i) => ({ index: i, key, file: `tiles/${String(i).padStart(2,'0')}_${key}.png` })),
+  crops: CROP_KEYS.flatMap((key, c) => [0,1,2,3].map(stage => ({ key, stage, file: `crops/${key}_${stage}.png` }))),
+  icons: ICON_KEYS.map((key, i) => ({ index: i, key, file: `icons/${String(i).padStart(2,'0')}_${key}.png` })),
+  objects: Object.keys(objectAssets).map(key => ({ key, file: `objects/${key}.png` })),
+}, null, 2));
 console.log('Done.');
