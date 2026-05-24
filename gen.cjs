@@ -62,41 +62,41 @@ function grassTuft(px,W,x,y,dark,mid,light){
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const P = {
   // grounds
-  grassDry:  [132,140, 85],
-  grassDry2: [104,116, 72],
-  grassDry3: [154,156, 96],
-  grassLush: [ 96,174, 78],
-  grassLush2:[ 58,132, 62],
-  dirt:      [128, 94, 64],
-  dirt2:     [ 96, 68, 48],
-  soilTill:  [104, 70, 46],
-  soilTill2: [ 72, 46, 32],
-  soilWet:   [ 68, 42, 30],
-  soilWet2:  [ 42, 26, 20],
+  grassDry:  [166,148, 68],
+  grassDry2: [128,120, 62],
+  grassDry3: [196,170, 80],
+  grassLush: [104,196, 62],
+  grassLush2:[ 42,144, 58],
+  dirt:      [178,124, 62],
+  dirt2:     [122, 78, 44],
+  soilTill:  [130, 78, 44],
+  soilTill2: [ 82, 46, 30],
+  soilWet:   [ 82, 44, 30],
+  soilWet2:  [ 46, 26, 20],
   waterBad:  [ 72, 94, 96],
   waterBad2: [ 48, 70, 78],
-  waterClean:[ 58,132,178],
-  waterClean2:[110,184,218],
-  gravel:    [134,128,112],
+  waterClean:[ 42,158,196],
+  waterClean2:[100,218,232],
+  gravel:    [198,154, 82],
   metal:     [ 88, 94,104],
   metal2:    [ 58, 64, 74],
   metalClean:[154,166,176],
   ash:       [104,100, 90],
   ash2:      [ 74, 70, 64],
   // objects
-  woodBark:  [116, 76, 44],
-  woodBark2: [ 70, 44, 30],
-  woodLight: [172,118, 62],
-  leafDead:  [148,132, 72],
-  leafLush:  [ 88,172, 72],
-  leafLush2: [ 42,120, 58],
+  woodBark:  [136, 78, 36],
+  woodBark2: [ 74, 42, 24],
+  woodLight: [204,132, 54],
+  leafDead:  [172,124, 52],
+  leafLush:  [ 68,184, 54],
+  leafLush2: [ 16,112, 48],
   rock:      [146,140,126],
   rock2:     [ 86, 84, 78],
   scrap:     [166,158,136],
   scrap2:    [100, 98, 92],
   scrapRust: [174, 88, 52],
-  fiberStem: [102,146, 78],
-  fiberLeaf: [164,196,104],
+  fiberStem: [ 76,154, 68],
+  fiberLeaf: [170,222, 80],
   // ruins
   ruinWall:  [120,122,126],
   ruinWall2: [ 76, 78, 86],
@@ -128,14 +128,14 @@ function tileBase(px,W,ox,oy, baseCol, varyCol, vary2Col){
 
 function tGrassDry(px,W,ox,oy){
   tileBase(px,W,ox,oy, P.grassDry, P.grassDry3, P.grassDry2);
-  for(let i=0;i<11;i++){
+  for(let i=0;i<15;i++){
     const gx=ox+2+(noise2(ox+i,oy)%(S-4)), gy=oy+2+(noise2(oy+i,ox)%(S-4));
-    grassTuft(px,W,gx,gy, [74,88,50], [118,126,70], [184,174,92]);
+    grassTuft(px,W,gx,gy, [98,92,44], [178,150,60], [236,194,86]);
   }
-  [[6,6],[23,11],[12,24]].forEach(([dx,dy])=>{
-    sp(px,W,ox+dx,oy+dy, 196,170,90);
-    sp(px,W,ox+dx+1,oy+dy, 104,122,66);
+  [[6,6],[23,11],[12,24],[27,27]].forEach(([dx,dy])=>{
+    flower(px,W,ox+dx,oy+dy, [234,118,78]);
   });
+  tileEdgeShade(px,W,ox,oy);
 }
 function flower(px,W,x,y,petal=[236,210,120]){
   sp(px,W,x,y, 70,130,52);
@@ -180,12 +180,12 @@ function tileEdgeShade(px,W,ox,oy){
   }
 }
 function tGrassLush(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [124,190,82]);
-  for(let i=0;i<13;i++){
+  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [150,222,82]);
+  for(let i=0;i<18;i++){
     const gx=ox+3+(noise2(ox+i+7,oy+3)%(S-6)), gy=oy+3+(noise2(oy+i+5,ox+1)%(S-6));
-    grassTuft(px,W,gx,gy, [32,102,48], [84,170,64], [190,228,112]);
+    grassTuft(px,W,gx,gy, [12,104,42], [72,186,56], [204,246,92]);
   }
-  [[8,8],[21,20]].forEach(([dx,dy])=>flower(px,W,ox+dx,oy+dy, [238,164,122]));
+  [[8,8],[21,20],[26,9]].forEach(([dx,dy])=>flower(px,W,ox+dx,oy+dy, [246,174,88]));
   tileEdgeShade(px,W,ox,oy);
 }
 function tDirt(px,W,ox,oy){
@@ -229,11 +229,13 @@ function tWaterClean(px,W,ox,oy){
   waterSparkle(px,W,ox,oy,14,14);
 }
 function tGravel(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.gravel, [102,98,88], [156,148,132]);
-  for(let i=0;i<10;i++){
+  tileBase(px,W,ox,oy, P.gravel, [224,174, 88], [168,120, 66]);
+  for(let i=0;i<12;i++){
     const gx=ox+2+(noise2(ox+i,oy+i*3)%(S-4)), gy=oy+2+(noise2(oy+i,ox+i*2)%(S-4));
-    pebble(px,W,gx,gy, [170,164,146], [78,74,66]);
+    fe(px,W,gx,gy,2,1, 154,138,108);
+    sp(px,W,gx-1,gy-1, 226,202,154);
   }
+  [[4,26],[14,12],[24,20]].forEach(([dx,dy])=>grassTuft(px,W,ox+dx,oy+dy,[104,112,44],[164,146,58],[230,190,78]));
 }
 function tMetalFloor(px,W,ox,oy){
   fr(px,W,ox,oy,S,S, P.metal[0],P.metal[1],P.metal[2]);
@@ -405,44 +407,54 @@ function genHumanSheet(palette){
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 function genDeadTree(){
-  const W=32,H=48, px=blankPx(W,H);
-  fe(px,W,16,42,12,3, 30,24,20,150);
+  const W=48,H=64, px=blankPx(W,H);
+  fe(px,W,24,58,16,4, 30,24,20,150);
   // trunk
-  fr(px,W,13,15,6,29, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,13,15,1,29, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  fr(px,W,18,17,1,25, 54,34,24);
-  line(px,W,16,16,15,40, 154,96,54);
-  line(px,W,17,18,18,38, 86,54,34);
+  fr(px,W,20,22,8,34, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  fr(px,W,19,25,2,31, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,27,24,2,30, 58,34,22);
+  line(px,W,23,22,21,54, 174,96,44);
+  line(px,W,26,24,28,52, 88,48,28);
   // root flare
-  fr(px,W,10,40,12,4, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,16,53,16,5, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  line(px,W,20,54,12,60, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  line(px,W,28,54,37,60, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
   // dead branches
-  line(px,W,18,17,27,10, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  line(px,W,25,10,28,5, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  line(px,W,14,21,5,14, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  line(px,W,6,14,4,8, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  line(px,W,16,15,14,4, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  line(px,W,14,7,10,3, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  [[12,27],[20,30],[9,35]].forEach(([x,y])=>leafCluster(px,W,x,y,[96,92,52],P.leafDead,[176,154,78]));
+  line(px,W,27,25,42,13, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,39,15,45,7, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  line(px,W,21,30,7,20, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,8,20,4,11, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  line(px,W,24,23,22,6, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,22,9,15,3, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  [[15,38],[31,39],[11,48],[36,30],[24,16]].forEach(([x,y])=>leafCluster(px,W,x,y,[116,82,40],P.leafDead,[222,164,70]));
   return makePNG(W,H,px);
 }
 function genLushTree(){
-  const W=32,H=48, px=blankPx(W,H);
-  fe(px,W,16,42,13,3, 30,24,20,145);
-  fr(px,W,13,27,6,17, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
-  fr(px,W,13,27,1,17, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
-  fr(px,W,18,29,1,13, 68,42,26);
-  line(px,W,16,29,12,38, 170,104,58);
+  const W=48,H=64, px=blankPx(W,H);
+  fe(px,W,24,58,17,4, 30,24,20,145);
+  fr(px,W,20,37,8,19, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  fr(px,W,19,39,2,17, P.woodBark2[0],P.woodBark2[1],P.woodBark2[2]);
+  fr(px,W,27,39,2,15, 68,38,24);
+  line(px,W,24,38,18,52, 208,122,54);
+  line(px,W,24,37,34,31, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
+  line(px,W,23,38,13,32, P.woodBark[0],P.woodBark[1],P.woodBark[2]);
   // dark silhouette first, then leafy clumps for a softer hand-pixeled crown.
-  fe(px,W,16,17,15,13, 24,80,42);
-  fc(px,W,8,18,7, 24,80,42);
-  fc(px,W,24,17,7, 24,80,42);
-  fc(px,W,16,8,8, 24,80,42);
-  fe(px,W,16,18,13,11, P.leafLush2[0],P.leafLush2[1],P.leafLush2[2]);
-  fc(px,W,10,16,6, 68,150,62);
-  fc(px,W,22,15,6, 70,154,66);
-  fc(px,W,16,9,7, 92,180,76);
-  fc(px,W,15,18,6, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
-  [[10,10],[18,7],[23,13],[13,20],[19,18]].forEach(([x,y])=>sp(px,W,x,y, 176,224,112));
+  fe(px,W,24,25,22,19, 10,78,36);
+  fc(px,W,11,27,10, 10,78,36);
+  fc(px,W,37,26,10, 10,78,36);
+  fc(px,W,24,12,12, 10,78,36);
+  fc(px,W,24,35,13, 10,78,36);
+  fe(px,W,24,26,19,16, P.leafLush2[0],P.leafLush2[1],P.leafLush2[2]);
+  fc(px,W,12,25,9, 34,146,52);
+  fc(px,W,36,24,9, 34,150,56);
+  fc(px,W,24,13,10, 74,194,58);
+  fc(px,W,23,31,10, 58,166,54);
+  fc(px,W,19,22,8, P.leafLush[0],P.leafLush[1],P.leafLush[2]);
+  [[13,16],[23,9],[34,18],[17,31],[30,30],[25,20],[9,27],[38,27]].forEach(([x,y])=>sp(px,W,x,y, 206,248,88));
+  [[15,25],[33,23],[25,32]].forEach(([x,y])=>{
+    fc(px,W,x,y,2, 198,42,34);
+    sp(px,W,x-1,y-1, 246,98,66);
+  });
   return makePNG(W,H,px);
 }
 function genRock(){
@@ -485,9 +497,11 @@ function genFiber(){
   const W=24,H=20, px=blankPx(W,H);
   fe(px,W,12,17,9,2, 30,40,30,150);
   // bush
-  fc(px,W,12,12,7, 56,126,60);
+  fc(px,W,12,12,7, 26,116,48);
   fc(px,W,9,11,5, P.fiberStem[0],P.fiberStem[1],P.fiberStem[2]);
   fc(px,W,14,9,6, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
+  fc(px,W,7,14,4, 44,150,54);
+  fc(px,W,18,13,4, 68,178,60);
   line(px,W,7,15,5,7, 76,134,62);
   line(px,W,13,16,14,4, 82,146,68);
   line(px,W,17,15,20,8, 74,130,60);
@@ -738,21 +752,22 @@ function drawMidGrowth(px,W,ox,oy, leafCol){
   fc(px,W,ox+8,oy+6,3, leafCol[0],leafCol[1],leafCol[2]);
   fc(px,W,ox+5,oy+9,2, leafCol[0],leafCol[1],leafCol[2]);
   fc(px,W,ox+11,oy+9,2, leafCol[0],leafCol[1],leafCol[2]);
+  fc(px,W,ox+8,oy+11,2, shade(leafCol,-28)[0],shade(leafCol,-28)[1],shade(leafCol,-28)[2]);
   sp(px,W,ox+7,oy+4, shade(leafCol,32)[0],shade(leafCol,32)[1],shade(leafCol,32)[2]);
 }
 function drawHarvestPotato(px,W,ox,oy){
   fr(px,W,ox+7,oy+8,2,7, P.fiberStem[0],P.fiberStem[1],P.fiberStem[2]);
-  fc(px,W,ox+8,oy+6,3, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
-  fc(px,W,ox+5,oy+8,2, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
-  fc(px,W,ox+11,oy+8,2, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
+  fc(px,W,ox+8,oy+6,4, P.fiberLeaf[0],P.fiberLeaf[1],P.fiberLeaf[2]);
+  fc(px,W,ox+5,oy+8,3, 88,182,62);
+  fc(px,W,ox+11,oy+8,3, 88,182,62);
   fc(px,W,ox+8,oy+12,2, 200,160,120);  // potato peeking
   sp(px,W,ox+9,oy+11, 220,180,140);
   sp(px,W,ox+6,oy+6, 190,228,116);
 }
 function drawHarvestWheat(px,W,ox,oy){
-  for(let i=0;i<3;i++){
-    const x=ox+5+i*3;
-    fr(px,W,x,oy+8,1,7, 200,170,80);
+  for(let i=0;i<4;i++){
+    const x=ox+4+i*3;
+    fr(px,W,x,oy+8,1,7, 210,150,52);
     sp(px,W,x-1,oy+7, 240,220,120);
     sp(px,W,x+1,oy+7, 240,220,120);
     sp(px,W,x,oy+5, 240,220,120);
@@ -761,11 +776,13 @@ function drawHarvestWheat(px,W,ox,oy){
 }
 function drawHarvestMushroom(px,W,ox,oy){
   fr(px,W,ox+7,oy+10,2,5, 220,210,180);
-  fc(px,W,ox+8,oy+8,4, 200,80,60);
-  fc(px,W,ox+8,oy+7,3, 220,100,80);
+  fc(px,W,ox+8,oy+8,5, 196,54,92);
+  fc(px,W,ox+8,oy+7,4, 226,74,116);
+  fc(px,W,ox+4,oy+11,2, 180,50,88);
   sp(px,W,ox+6,oy+7, 240,220,200);
   sp(px,W,ox+10,oy+7, 240,220,200);
   sp(px,W,ox+8,oy+5, 240,220,200);
+  sp(px,W,ox+11,oy+9, 250,230,210);
 }
 
 function genCrops(){
