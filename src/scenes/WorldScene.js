@@ -3,7 +3,7 @@ import { TILE, WORLD, DAY_LENGTH_MS } from '../config/GameConfig.js';
 import { T, SOLID } from '../data/tiles.js';
 import { buildMap, SPAWNS, PLAYER_SPAWN } from '../data/map.js';
 import { ITEMS } from '../data/items.js';
-import { State, Events, toast, addItem, removeItem, removeAcross, totalCount, pickup, startingInventory, activeTool, activeSlot, timeOfDay } from '../systems/GameState.js';
+import { State, Events, toast, addItem, removeItem, removeAcross, totalCount, pickup, startingInventory, activeTool, activeSlot, timeOfDay, researchDayTick } from '../systems/GameState.js';
 import Player from '../entities/Player.js';
 import NPC from '../entities/NPC.js';
 import ResourceNode from '../entities/ResourceNode.js';
@@ -78,11 +78,12 @@ export default class WorldScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-I', () => this.openInventory());
     this.input.keyboard.on('keydown-C', () => this.openCrafting());
     this.input.keyboard.on('keydown-B', () => this.openBuild());
+    this.input.keyboard.on('keydown-R', () => this.openResearch());
     this.input.keyboard.on('keydown-ESC', () => this.openPause());
 
     // Right-click eats from hotbar food
     this.input.on('pointerdown', (p) => {
-      if (p.rightButtonDown()) this.tryEatHotbar();
+      if (p.rightButtonDown()) this.tryUseHotbar();
     });
 
     // Tinted night overlay (full-screen overlay scaled to camera)
@@ -117,6 +118,19 @@ export default class WorldScene extends Phaser.Scene {
         this.placeables.add(g);
         this.generator = g;
         this.interactables.push({ obj: g, kind: 'generator' });
+      } else if (s.type === 'chest_loot') {
+        // Pre-populated chest (loot chest in world)
+        const place = new Placeable(this, s.x, s.y - 16, 'chest');
+        this.placeables.add(place);
+        const tx = Math.floor(s.x / 32), ty = Math.floor(s.y / 32);
+        this.placeablesByKey[`${tx},${ty}`] = place;
+        this.interactables.push({ obj: place, kind: 'placed' });
+        // Fill with loot
+        if (s.items && place.storage) {
+          for (const item of s.items) {
+            addItem(place.storage, item.id, item.qty);
+          }
+        }
       }
     }
   }
@@ -280,14 +294,19 @@ export default class WorldScene extends Phaser.Scene {
     return best;
   }
 
-  // ---------------------------------------------------------------- HOTBAR EAT
-  tryEatHotbar() {
+  // ---------------------------------------------------------------- HOTBAR USE (right-click)
+  tryUseHotbar() {
     const slot = activeSlot();
     if (!slot) return;
     const def = ITEMS[slot.id];
     if (def && def.kind === 'food') {
       removeAcross(slot.id, 1);
       this.player.eat(def.hunger || 15);
+    } else if (def && def.kind === 'medicine') {
+      removeAcross(slot.id, 1);
+      const heal = def.heal || 40;
+      this.player.heal(heal);
+      toast(`+${heal} HP`, '#80e080');
     }
   }
 
@@ -295,6 +314,7 @@ export default class WorldScene extends Phaser.Scene {
   openInventory() { this.scene.launch('InventoryScene'); this.scene.pause('WorldScene'); }
   openCrafting()  { this.scene.launch('CraftingScene');  this.scene.pause('WorldScene'); }
   openBuild()     { this.scene.launch('BuildScene');     this.scene.pause('WorldScene'); }
+  openResearch()  { this.scene.launch('ResearchScene');  this.scene.pause('WorldScene'); }
   openPause()     { this.scene.launch('PauseScene');     this.scene.pause('WorldScene'); }
 
   // ---------------------------------------------------------------- BUILD CALL
@@ -443,6 +463,8 @@ export default class WorldScene extends Phaser.Scene {
       toast(`Dia ${State.dayCount}`, '#e6c98a');
       // Daily NPC consumption
       this.npcsDailyEat();
+      // Research tick
+      researchDayTick();
     }
     this.applyDayNightTint();
   }
@@ -486,6 +508,7 @@ function getTextureForKind(kind) {
     campfire:'campfire', chest:'chest', water_tank:'water_tank',
     small_gen:'small_gen', planter:'planter',
     floor_tile:'floor_tile', wall_tile:'wall_tile',
+    lab_bench:'lab_bench',
   };
   return map[kind] || 'chest';
 }

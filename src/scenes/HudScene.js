@@ -48,8 +48,8 @@ export default class HudScene extends Phaser.Scene {
     this.activeBox = this.add.image(this.hotSlots[0].x, hy + sh/2, 'ui_slot_hi').setDisplaySize(sw, sh);
 
     // Bottom hint
-    this.add.text(w/2, h - sh - 30, '1–6 ferramenta · E interagir · I inventário · C craftar · B construir', {
-      fontFamily:'monospace', fontSize:'11px', color:'#8a93a2'
+    this.add.text(w/2, h - sh - 30, '1–6 ferramenta · E interagir · I inventário · C craftar · B construir · R pesquisa · clique-dir usar', {
+      fontFamily:'monospace', fontSize:'10px', color:'#8a93a2'
     }).setOrigin(0.5);
 
     // Toast container (top center)

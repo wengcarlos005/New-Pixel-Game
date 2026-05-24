@@ -25,6 +25,12 @@ export const State = {
   energyOnline: false,
   dayMs: 0,
   dayCount: 1,
+  // Research system
+  research: {
+    completed: [],                // array of tech IDs already done
+    inProgress: null,             // { id, daysLeft, totalDays }
+    labBuilt: false,
+  },
   meta: {
     toasts: [],
   },
@@ -156,6 +162,7 @@ export function startingInventory() {
   addItem(State.inventory, 'wood', 2);
   addItem(State.inventory, 'seed_potato', 3);
   addItem(State.inventory, 'seed_wheat',  3);
+  addItem(State.inventory, 'research_data', 1); // starting research data
   State.player.hp = HEALTH_MAX;
   State.player.hunger = HUNGER_MAX;
   State.player.stamina = STAMINA_MAX;
@@ -163,4 +170,38 @@ export function startingInventory() {
   State.dayCount = 1;
   State.energyOnline = false;
   State.npcs = [];
+  State.research = { completed: [], inProgress: null, labBuilt: false };
+}
+
+// Called once per in-game day to tick research progress
+export function researchDayTick() {
+  const r = State.research;
+  if (!r.inProgress) return;
+  r.inProgress.daysLeft -= 1;
+  if (r.inProgress.daysLeft <= 0) {
+    r.completed.push(r.inProgress.id);
+    const techId = r.inProgress.id;
+    r.inProgress = null;
+    Events.emit('research:complete', techId);
+    toast(`Pesquisa concluída: ${techId}`, '#80e0ff');
+  }
+}
+
+// Check if a tech is available (requires met, not already done)
+export function canResearch(tech) {
+  const r = State.research;
+  if (r.completed.includes(tech.id)) return false;
+  if (r.inProgress) return false;
+  if (!r.labBuilt) return false;
+  for (const req of tech.requires) {
+    if (!r.completed.includes(req)) return false;
+  }
+  return true;
+}
+
+// Start researching a tech (cost already paid by caller)
+export function startResearch(tech) {
+  State.research.inProgress = { id: tech.id, daysLeft: tech.timeDays, totalDays: tech.timeDays };
+  Events.emit('research:started', tech.id);
+  toast(`Pesquisando: ${tech.name}`, '#80e0ff');
 }

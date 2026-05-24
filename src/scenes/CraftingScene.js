@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { State, Events, addItem, removeAcross, totalCount, toast } from '../systems/GameState.js';
+// Filter: recipe with .tech field only shows if that tech is in research.completed
 import { ITEMS } from '../data/items.js';
 import { RECIPES } from '../data/recipes.js';
 
@@ -18,8 +19,15 @@ export default class CraftingScene extends Phaser.Scene {
       fontFamily:'monospace', fontSize:'18px', color:'#e6c98a'
     }).setOrigin(0.5);
 
-    // List recipes
-    const recipes = RECIPES.filter(r => !this.filter || r.needs === this.filter);
+    // List recipes (filter by campfire needs AND tech unlock)
+    const completed = State.research ? State.research.completed : [];
+    const recipes = RECIPES.filter(r => {
+      if (r.kind === 'placeable') return false; // placeable handled by BuildScene
+      if (this.filter && r.needs !== this.filter) return false;
+      if (!this.filter && r.needs) return false; // campfire recipes shown only at campfire
+      if (r.tech && !completed.includes(r.tech)) return false;
+      return true;
+    });
     this.rows = [];
     const rowH = 40, startY = py + 56;
     recipes.forEach((r, i) => {

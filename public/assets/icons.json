@@ -17,7 +17,14 @@
     "watering_can",
     "scythe",
     "meal",
-    "energy_cell"
+    "energy_cell",
+    "seed_corn",
+    "seed_herb",
+    "crop_corn",
+    "crop_herb",
+    "medicine",
+    "circuit",
+    "research_data"
   ],
   "size": 16
 }

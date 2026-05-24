@@ -27,7 +27,7 @@ export const GameConfig = {
 
 // Tunables
 export const TILE = 32;
-export const WORLD = { cols: 48, rows: 36 };
+export const WORLD = { cols: 58, rows: 38 };
 export const PLAYER_SPEED = 110;
 export const PLAYER_RUN = 175;
 export const STAMINA_MAX = 100;

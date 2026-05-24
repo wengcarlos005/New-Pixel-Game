@@ -10,6 +10,7 @@ import CraftingScene from './scenes/CraftingScene.js';
 import BuildScene from './scenes/BuildScene.js';
 import DialogueScene from './scenes/DialogueScene.js';
 import PauseScene from './scenes/PauseScene.js';
+import ResearchScene from './scenes/ResearchScene.js';
 
 const config = {
   ...GameConfig,
@@ -24,6 +25,7 @@ const config = {
     BuildScene,
     DialogueScene,
     PauseScene,
+    ResearchScene,
   ],
 };
 

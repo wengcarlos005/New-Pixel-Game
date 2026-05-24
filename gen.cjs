@@ -160,8 +160,8 @@ const P = {
   grassDry:  [166,148, 68],
   grassDry2: [128,120, 62],
   grassDry3: [196,170, 80],
-  grassLush: [104,196, 62],
-  grassLush2:[ 42,144, 58],
+  grassLush: [86,196,42],
+  grassLush2:[26,138,36],
   dirt:      [178,124, 62],
   dirt2:     [122, 78, 44],
   soilTill:  [130, 78, 44],
@@ -275,12 +275,14 @@ function tileEdgeShade(px,W,ox,oy){
   }
 }
 function tGrassLush(px,W,ox,oy){
-  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [150,222,82]);
-  for(let i=0;i<18;i++){
+  tileBase(px,W,ox,oy, P.grassLush, P.grassLush2, [148,228,68]);
+  for(let i=0;i<22;i++){
     const gx=ox+3+(noise2(ox+i+7,oy+3)%(S-6)), gy=oy+3+(noise2(oy+i+5,ox+1)%(S-6));
-    grassTuft(px,W,gx,gy, [12,104,42], [72,186,56], [204,246,92]);
+    grassTuft(px,W,gx,gy, [14,108,34], [78,196,48], [196,254,86]);
   }
-  [[8,8],[21,20],[26,9]].forEach(([dx,dy])=>flower(px,W,ox+dx,oy+dy, [246,174,88]));
+  // Extra leaf clusters for lush density
+  [[4,12],[22,8],[14,26],[28,18]].forEach(([dx,dy])=>leafCluster(px,W,ox+dx,oy+dy,[14,100,36],[76,186,50],[172,240,88]));
+  [[8,8],[21,20],[26,9],[12,16]].forEach(([dx,dy])=>flower(px,W,ox+dx,oy+dy, [252,186,60]));
   tileEdgeShade(px,W,ox,oy);
 }
 function tDirt(px,W,ox,oy){
@@ -907,33 +909,72 @@ function drawHarvestMushroom(px,W,ox,oy){
   sp(px,W,ox+11,oy+9, 250,230,210);
 }
 
+function drawCornSprout(px,W,ox,oy){
+  fe(px,W,ox+8,oy+14,4,2, 38,24,14,140);
+  fr(px,W,ox+8,oy+6,2,8, 40,140,48);
+  sp(px,W,ox+6,oy+8, 68,190,56); sp(px,W,ox+11,oy+9, 56,174,46);
+  sp(px,W,ox+8,oy+5, 180,240,90);
+}
+function drawCornMid(px,W,ox,oy){
+  fe(px,W,ox+8,oy+15,6,2, 36,22,12,140);
+  fr(px,W,ox+8,oy+3,2,12, 38,136,46);
+  fc(px,W,ox+5,oy+8,4, 58,180,52); fc(px,W,ox+12,oy+7,4, 54,168,46);
+  sp(px,W,ox+8,oy+2, 200,250,80);
+  fc(px,W,ox+8,oy+10,2, 220,180,40);
+}
+function drawHarvestCorn(px,W,ox,oy){
+  fe(px,W,ox+8,oy+15,7,2, 34,22,12,150);
+  fr(px,W,ox+8,oy+2,2,12, 34,128,42);
+  fc(px,W,ox+4,oy+7,5, 52,172,46); fc(px,W,ox+12,oy+6,5, 48,158,42);
+  fc(px,W,ox+8,oy+9,4, 240,196,28);
+  fr(px,W,ox+7,oy+8,2,6, 248,210,42);
+  sp(px,W,ox+7,oy+8, 255,232,80); sp(px,W,ox+9,oy+8, 255,232,80);
+  sp(px,W,ox+8,oy+14, 170,110,24);
+}
+function drawHerbMid(px,W,ox,oy){
+  fe(px,W,ox+8,oy+15,5,2, 36,22,14,140);
+  fr(px,W,ox+8,oy+8,2,6, 40,126,48);
+  fc(px,W,ox+6,oy+9,4, 56,182,62); fc(px,W,ox+11,oy+10,3, 56,182,62);
+  fc(px,W,ox+8,oy+7,3, 140,220,68);
+}
+function drawHarvestHerb(px,W,ox,oy){
+  fe(px,W,ox+8,oy+15,6,2, 34,22,12,145);
+  fr(px,W,ox+8,oy+6,2,8, 36,122,44);
+  fc(px,W,ox+5,oy+9,5, 48,172,56); fc(px,W,ox+12,oy+9,4, 52,180,60);
+  fc(px,W,ox+8,oy+5,4, 168,236,74);
+  [[5,7],[11,7],[8,4]].forEach(([x,y])=>{
+    sp(px,W,ox+x,oy+y, 250,210,80); sp(px,W,ox+x,oy+y+1, 200,240,120);
+  });
+}
 function genCrops(){
-  // 4 stages × 3 crops = 4 cols × 3 rows × 16
-  const T=16, cols=4, rows=3;
+  // 4 stages × 5 crops = 4 cols × 5 rows × 16
+  const T=16, cols=4, rows=5;
   const W=cols*T, H=rows*T;
   const px=blankPx(W,H);
   // row 0: potato
-  drawSeed(px,W, 0,0);
-  drawSprout(px,W, T,0);
-  drawMidGrowth(px,W, 2*T,0, P.fiberLeaf);
-  drawHarvestPotato(px,W, 3*T,0);
+  drawSeed(px,W, 0,0); drawSprout(px,W, T,0);
+  drawMidGrowth(px,W, 2*T,0, P.fiberLeaf); drawHarvestPotato(px,W, 3*T,0);
   // row 1: wheat
-  drawSeed(px,W, 0,T);
-  drawSprout(px,W, T,T);
-  drawMidGrowth(px,W, 2*T,T, [180,180,80]);
-  drawHarvestWheat(px,W, 3*T,T);
+  drawSeed(px,W, 0,T); drawSprout(px,W, T,T);
+  drawMidGrowth(px,W, 2*T,T, [180,180,80]); drawHarvestWheat(px,W, 3*T,T);
   // row 2: mushroom
-  drawSeed(px,W, 0,2*T);
-  drawSprout(px,W, T,2*T);
-  drawMidGrowth(px,W, 2*T,2*T, [180,140,140]);
-  drawHarvestMushroom(px,W, 3*T,2*T);
+  drawSeed(px,W, 0,2*T); drawSprout(px,W, T,2*T);
+  drawMidGrowth(px,W, 2*T,2*T, [180,140,140]); drawHarvestMushroom(px,W, 3*T,2*T);
+  // row 3: corn
+  drawSeed(px,W, 0,3*T); drawCornSprout(px,W, T,3*T);
+  drawCornMid(px,W, 2*T,3*T); drawHarvestCorn(px,W, 3*T,3*T);
+  // row 4: herb
+  drawSeed(px,W, 0,4*T); drawSprout(px,W, T,4*T);
+  drawHerbMid(px,W, 2*T,4*T); drawHarvestHerb(px,W, 3*T,4*T);
   return makePNG(W,H,px);
 }
-const CROP_KEYS = ['potato','wheat','mushroom'];
+const CROP_KEYS = ['potato','wheat','mushroom','corn','herb'];
 const CROP_DRAWERS = [
   [drawSeed, drawSprout, (px,W,ox,oy)=>drawMidGrowth(px,W,ox,oy, P.fiberLeaf), drawHarvestPotato],
   [drawSeed, drawSprout, (px,W,ox,oy)=>drawMidGrowth(px,W,ox,oy, [206,188,66]), drawHarvestWheat],
   [drawSeed, drawSprout, (px,W,ox,oy)=>drawMidGrowth(px,W,ox,oy, [184,126,150]), drawHarvestMushroom],
+  [drawSeed, drawCornSprout, drawCornMid, drawHarvestCorn],
+  [drawSeed, drawSprout, drawHerbMid, drawHarvestHerb],
 ];
 function genCropPng(cropIndex, stage) {
   const T=16, px=blankPx(T,T);
@@ -980,7 +1021,7 @@ function genCropsFarmingSet(){
   if (!hasThirdPartyFarmingSet()) return genCrops();
   const veg = readPNG(thirdPartyFile('Vegetables.png'));
   const cereals = readPNG(thirdPartyFile('Cereals.png'));
-  const T=32, cols=4, rows=3, W=cols*T, H=rows*T;
+  const T=32, cols=4, rows=5, W=cols*T, H=rows*T;
   const px=blankPx(W,H);
   // potato
   drawCropSeed32(px,W,0,0,[180,130,74]);
@@ -1006,18 +1047,36 @@ function genCropsFarmingSet(){
   fc(px,W,3*T+16,2*T+15,10, 184,42,98);
   fc(px,W,3*T+16,2*T+13,8, 228,70,124);
   [[11,11],[18,10],[21,16],[14,18]].forEach(([x,y])=>fc(px,W,3*T+x,2*T+y,1, 250,226,208));
+  // corn row (32px scale)
+  drawCropSeed32(px,W,0,3*T,[248,196,30]);
+  drawCropSprout32(px,W,T,3*T);
+  drawCropBush32(px,W,2*T,3*T,[244,210,42]);
+  // harvest corn 32px
+  drawCropBush32(px,W,3*T,3*T,[240,196,28]);
+  fc(px,W,3*T+16,3*T+15,6, 244,196,26);
+  fr(px,W,3*T+14,3*T+12,4,10, 252,212,42);
+  sp(px,W,3*T+14,3*T+12, 255,238,80); sp(px,W,3*T+18,3*T+12, 255,238,80);
+  // herb row (32px scale)
+  drawCropSeed32(px,W,0,4*T,[60,180,80]);
+  drawCropSprout32(px,W,T,4*T);
+  drawCropBush32(px,W,2*T,4*T,[172,238,78]);
+  drawCropBush32(px,W,3*T,4*T,[168,236,74]);
+  [[11,10],[18,11],[15,7]].forEach(([x,y])=>{
+    sp(px,W,3*T+x,4*T+y, 252,214,76); sp(px,W,3*T+x,4*T+y+2, 210,244,118);
+  });
   return makePNG(W,H,px);
 }
 function genCropSourcePng(cropIndex, stage) {
   if (!hasThirdPartyFarmingSet()) return genCropPng(cropIndex, stage);
   const T=32, px=blankPx(T,T);
   if (stage === 0) {
-    const colors = [[180,130,74],[218,180,70],[204,80,116]];
-    drawCropSeed32(px,T,0,0,colors[cropIndex]);
+    const colors = [[180,130,74],[218,180,70],[204,80,116],[248,196,30],[60,180,80]];
+    drawCropSeed32(px,T,0,0,colors[cropIndex]||[180,130,74]);
   } else if (stage === 1) {
-    drawCropSprout32(px,T,0,0);
+    if (cropIndex === 3) { drawCropSprout32(px,T,0,0); }
+    else drawCropSprout32(px,T,0,0);
   } else if (stage === 2) {
-    const accents = [[220,178,112],[238,210,94],[220,86,128]];
+    const accents = [[220,178,112],[238,210,94],[220,86,128],[240,196,28],[172,238,78]];
     if (cropIndex === 1) {
       for(let i=0;i<5;i++){
         const x=8+i*4;
@@ -1035,11 +1094,23 @@ function genCropSourcePng(cropIndex, stage) {
     } else if (cropIndex === 1) {
       const cereals = readPNG(thirdPartyFile('Cereals.png'));
       blit(cereals, px, T, 0,64,32,32, 0,0);
-    } else {
+    } else if (cropIndex === 2) {
       fr(px,T,14,18,5,10, 220,210,184);
       fc(px,T,16,15,10, 184,42,98);
       fc(px,T,16,13,8, 228,70,124);
       [[11,11],[18,10],[21,16],[14,18]].forEach(([x,y])=>fc(px,T,x,y,1, 250,226,208));
+    } else if (cropIndex === 3) {
+      // corn harvest 32px
+      drawCropBush32(px,T,0,0,[240,196,28]);
+      fc(px,T,16,15,6, 244,196,26);
+      fr(px,T,14,12,4,10, 252,212,42);
+      sp(px,T,14,12, 255,238,80); sp(px,T,18,12, 255,238,80);
+    } else {
+      // herb harvest 32px
+      drawCropBush32(px,T,0,0,[168,236,74]);
+      [[11,10],[18,11],[15,7]].forEach(([x,y])=>{
+        sp(px,T,x,y, 252,214,76); sp(px,T,x,y+2, 210,244,118);
+      });
     }
   }
   return makePNG(T,T,px);
@@ -1149,12 +1220,81 @@ function iMeal(px,W,ox,oy){
   sp(px,W,ox+9,oy+6, 230,180,100);
 }
 function iEnergyCell(px,W,ox,oy){
-  fr(px,W,ox+5,oy+3,6,10, P.scrap2[0],P.scrap2[1],P.scrap2[2]);
-  fr(px,W,ox+6,oy+4,4,8, 30,80,140);
-  fr(px,W,ox+6,oy+5,4,2, 80,180,240);
-  fr(px,W,ox+6,oy+9,4,2, 80,180,240);
-  fr(px,W,ox+7,oy+1,2,2, P.scrap[0],P.scrap[1],P.scrap[2]);
-  outline(px,W,ox+5,oy+3,6,10, 20,20,30);
+  // Dark navy fill
+  fr(px,W,ox,oy,16,16, 8,16,40);
+  // Silver caps top (rows 1-2)
+  fr(px,W,ox+2,oy+1,12,2, 172,178,192);
+  sp(px,W,ox+2,oy+1, 220,226,236); // highlight pixel
+  fr(px,W,ox+2,oy+13,12,2, 172,178,192); // bottom cap
+  sp(px,W,ox+2,oy+13, 220,226,236);
+  // Green body (rows 3-12)
+  fr(px,W,ox+2,oy+3,12,10, 24,152,64);
+  fr(px,W,ox+2,oy+3,2,10, 12,88,36);   // left shadow
+  fr(px,W,ox+12,oy+3,2,10, 12,88,36);  // right shadow
+  fr(px,W,ox+3,oy+3,2,10, 60,200,88);  // left highlight
+  // Lightning bolt (yellow) — Z shape
+  sp(px,W,ox+10,oy+4, 250,214,18); sp(px,W,ox+9,oy+4, 250,214,18);
+  sp(px,W,ox+9,oy+5, 250,214,18);
+  sp(px,W,ox+8,oy+6, 250,214,18); sp(px,W,ox+9,oy+6, 250,214,18); sp(px,W,ox+10,oy+6, 250,214,18);
+  sp(px,W,ox+7,oy+7, 250,214,18);
+  sp(px,W,ox+7,oy+8, 250,214,18); sp(px,W,ox+6,oy+8, 250,214,18);
+  sp(px,W,ox+6,oy+9, 250,214,18);
+  sp(px,W,ox+5,oy+10, 250,214,18); sp(px,W,ox+6,oy+10, 250,214,18);
+  // Outer outline
+  outline(px,W,ox,oy,16,16, 4,8,22);
+}
+
+// ─── New icons ────────────────────────────────────────────────────────────────
+function iSeedCorn(px,W,ox,oy){
+  fc(px,W,ox+8,oy+8,3, 248,196,30); fc(px,W,ox+8,oy+8,2, 255,224,90);
+  outline(px,W,ox+5,oy+5,7,7, 120,80,20,0);
+}
+function iSeedHerb(px,W,ox,oy){
+  fc(px,W,ox+8,oy+8,3, 50,180,70); fc(px,W,ox+8,oy+8,2, 100,224,110);
+  outline(px,W,ox+5,oy+5,7,7, 20,80,30,0);
+}
+function iCropCorn(px,W,ox,oy){
+  fr(px,W,ox+7,oy+2,2,11, 248,202,32); // cob
+  sp(px,W,ox+8,oy+2, 255,232,80);
+  fr(px,W,ox+5,oy+4,2,6, 54,138,48); // leaf left
+  fr(px,W,ox+9,oy+3,2,6, 54,138,48); // leaf right
+  sp(px,W,ox+8,oy+13, 176,116,28);
+  outline(px,W,ox+6,oy+2,4,12, 80,50,10,0);
+}
+function iCropHerb(px,W,ox,oy){
+  fr(px,W,ox+7,oy+9,2,5, 44,124,48); // stem
+  fc(px,W,ox+8,oy+6,4, 36,168,58);
+  fc(px,W,ox+5,oy+8,3, 56,188,68); fc(px,W,ox+11,oy+8,3, 56,188,68);
+  sp(px,W,ox+8,oy+3, 172,240,96);
+}
+function iMedicine(px,W,ox,oy){
+  // Red pill / cross
+  fr(px,W,ox+4,oy+4,8,8, 210,54,54);
+  fr(px,W,ox+4,oy+4,8,2, 244,100,100); // top highlight
+  fr(px,W,ox+7,oy+5,2,6, 240,240,240); // white cross v
+  fr(px,W,ox+5,oy+7,6,2, 240,240,240); // white cross h
+  outline(px,W,ox+4,oy+4,8,8, 110,18,18);
+}
+function iCircuit(px,W,ox,oy){
+  fr(px,W,ox+3,oy+4,10,8, 22,34,20); // board
+  fr(px,W,ox+3,oy+4,10,1, 40,64,36); // highlight
+  // traces
+  fr(px,W,ox+5,oy+6,6,1, 54,176,54); fr(px,W,ox+5,oy+8,6,1, 54,176,54);
+  fr(px,W,ox+5,oy+6,1,3, 54,176,54); fr(px,W,ox+10,oy+6,1,3, 54,176,54);
+  fc(px,W,ox+7,oy+7,1, 120,240,120); // chip center
+  // pins top/bottom
+  [[3,3],[6,3],[9,3],[3,12],[6,12],[9,12]].forEach(([dx,dy])=>sp(px,W,ox+dx,oy+dy, 158,158,118));
+  outline(px,W,ox+3,oy+4,10,8, 8,18,8);
+}
+function iResearchData(px,W,ox,oy){
+  fr(px,W,ox+3,oy+2,10,12, 36,56,100); // chip body
+  fr(px,W,ox+3,oy+2,10,2, 72,116,180); // top highlight
+  // data lines
+  fr(px,W,ox+5,oy+5,6,1, 96,178,242); fr(px,W,ox+5,oy+7,6,1, 96,178,242);
+  fr(px,W,ox+5,oy+9,6,1, 96,178,242); fr(px,W,ox+5,oy+11,4,1, 96,178,242);
+  // corner notch
+  fr(px,W,ox+11,oy+2,2,2, 24,38,72);
+  outline(px,W,ox+3,oy+2,10,12, 18,28,60);
 }
 
 const ICONS = [
@@ -1165,13 +1305,19 @@ const ICONS = [
   iCropPotato, iCropWheat, iCropMushroom,
   iAxe, iPickaxe, iHoe, iWateringCan, iScythe,
   iMeal, iEnergyCell,
+  iSeedCorn, iSeedHerb,           // 18-19
+  iCropCorn, iCropHerb,           // 20-21
+  iMedicine, iCircuit, iResearchData, // 22-24
 ];
 const ICON_KEYS = [
   'wood','scrap','stone','fiber','water',
   'seed_potato','seed_wheat','seed_mushroom',
   'crop_potato','crop_wheat','crop_mushroom',
   'axe','pickaxe','hoe','watering_can','scythe',
-  'meal','energy_cell'
+  'meal','energy_cell',
+  'seed_corn','seed_herb',
+  'crop_corn','crop_herb',
+  'medicine','circuit','research_data',
 ];
 
 function genIcons(){
@@ -1248,6 +1394,45 @@ function genGlow(){
   return makePNG(W,H,px);
 }
 
+// ─── Lab bench ───────────────────────────────────────────────────────────────
+function genLabBench(){
+  const W=48,H=48, px=blankPx(W,H);
+  // Shadow
+  fe(px,W,24,44,18,3, 20,20,24,140);
+  // Main bench body (dark green-tinted metal)
+  fr(px,W,4,22,40,18, 28,44,36);
+  fr(px,W,4,22,40,2, 46,72,54);  // top highlight
+  fr(px,W,4,36,40,4, 18,30,24);  // bottom shadow
+  // Bench top surface
+  fr(px,W,4,18,40,4, 58,90,68);
+  fr(px,W,4,18,40,1, 88,130,98); // highlight
+  // Screen / monitor on left
+  fr(px,W,6,6,14,12, 20,24,32);  // screen casing
+  fr(px,W,7,7,12,10, 20,80,140); // screen glass
+  fr(px,W,8,8,10,8, 30,120,200); // screen glow
+  // Green text lines on screen
+  fr(px,W,9,9,8,1, 60,220,80); fr(px,W,9,11,6,1, 60,220,80);
+  fr(px,W,9,13,7,1, 60,220,80); sp(px,W,9,15, 200,240,80);
+  // Cursor blink
+  sp(px,W,17,15, 60,220,80);
+  // Beakers / test tubes on right
+  fr(px,W,28,7,4,10, 80,160,200,200);  // beaker body
+  fr(px,W,27,16,6,2, 40,90,120);       // beaker base
+  fr(px,W,29,6,2,2, 140,200,240);      // beaker opening
+  // liquid in beaker
+  fr(px,W,28,12,4,5, 60,230,120,220);
+  // second small tube
+  fr(px,W,36,9,2,8, 160,220,160,180);
+  fr(px,W,36,16,2,1, 40,90,60);
+  fr(px,W,36,8,2,1, 200,240,200);
+  // Glow dot - power indicator
+  sp(px,W,38,22, 80,240,80);
+  sp(px,W,39,22, 60,200,60);
+  // Outline
+  outline(px,W,4,18,40,22, 14,22,18);
+  outline(px,W,6,6,14,12, 10,14,22);
+  return makePNG(W,H,px);
+}
 // ─── Title splash ─────────────────────────────────────────────────────────────
 function genTitleBg(){
   const W=480,H=270, px=blankPx(W,H);
@@ -1329,6 +1514,7 @@ const objectAssets = {
   planter: genPlanter(),
   wall_tile: genWallTile(),
   floor_tile: genFloorTile(),
+  lab_bench: genLabBench(),
 };
 Object.entries(objectAssets).forEach(([key, buf]) => writeSourceAsset('objects', `${key}.png`, buf));
 
@@ -1352,6 +1538,7 @@ write('small_gen.png',     objectAssets.small_gen);
 write('planter.png',       objectAssets.planter);
 write('wall_tile.png',     objectAssets.wall_tile);
 write('floor_tile.png',    objectAssets.floor_tile);
+write('lab_bench.png',     objectAssets.lab_bench);
 write('crops.png',         genCropsFarmingSet());
 write('icons.png',         genIconsFarmingSet());
 write('ui_slot.png',       genUiSlot());

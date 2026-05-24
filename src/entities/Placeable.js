@@ -5,13 +5,14 @@ import { makeInv } from '../systems/GameState.js';
 
 // Generic placed object. Some interact (chest open, fogueira light, water tank give water).
 const SPEC = {
-  campfire:   { texture:'campfire',    label:'Fogueira',         interact:'cook',  origin:[0.5,1] },
-  chest:      { texture:'chest',       label:'Caixa',            interact:'chest', origin:[0.5,1] },
-  water_tank: { texture:'water_tank',  label:'Reservatório',     interact:'water', origin:[0.5,1] },
-  small_gen:  { texture:'small_gen',   label:'Gerador Pequeno',  interact:'gen',   origin:[0.5,1] },
-  planter:    { texture:'planter',     label:'Canteiro',         interact:'plant', origin:[0.5,1] },
-  floor_tile: { texture:'floor_tile',  label:'Piso',             interact:null,    origin:[0.5,0.5], passable:true },
-  wall_tile:  { texture:'wall_tile',   label:'Parede',           interact:null,    origin:[0.5,0.5], blocking:true },
+  campfire:   { texture:'campfire',    label:'Fogueira',         interact:'cook',     origin:[0.5,1] },
+  chest:      { texture:'chest',       label:'Caixa',            interact:'chest',    origin:[0.5,1] },
+  water_tank: { texture:'water_tank',  label:'Reservatório',     interact:'water',    origin:[0.5,1] },
+  small_gen:  { texture:'small_gen',   label:'Gerador Pequeno',  interact:'gen',      origin:[0.5,1] },
+  planter:    { texture:'planter',     label:'Canteiro',         interact:'plant',    origin:[0.5,1] },
+  floor_tile: { texture:'floor_tile',  label:'Piso',             interact:null,       origin:[0.5,0.5], passable:true },
+  wall_tile:  { texture:'wall_tile',   label:'Parede',           interact:null,       origin:[0.5,0.5], blocking:true },
+  lab_bench:  { texture:'lab_bench',   label:'Bancada de Lab',   interact:'research', origin:[0.5,1] },
 };
 
 export default class Placeable extends Phaser.Physics.Arcade.Sprite {
@@ -69,6 +70,12 @@ export default class Placeable extends Phaser.Physics.Arcade.Sprite {
       case 'plant':
         // Open seed picker -> plant into canteiro
         scene.tryPlantAt(this.x, this.y, true);
+        return;
+      case 'research':
+        // Mark lab as built so research is available, then open research scene
+        State.research.labBuilt = true;
+        scene.scene.launch('ResearchScene');
+        scene.scene.pause('WorldScene');
         return;
     }
   }

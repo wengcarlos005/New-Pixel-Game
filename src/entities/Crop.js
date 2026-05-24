@@ -2,10 +2,10 @@ import Phaser from 'phaser';
 import { CROPS } from '../data/recipes.js';
 import { pickup, toast } from '../systems/GameState.js';
 
-// 4 stages × 3 crops in crops.png:
-//  row 0: potato, row 1: wheat, row 2: mushroom
+// 4 stages × 5 crops in crops.png:
+//  row 0: potato, row 1: wheat, row 2: mushroom, row 3: corn, row 4: herb
 //  col 0..3: stage 0..3
-const ROWS = { potato: 0, wheat: 1, mushroom: 2 };
+const ROWS = { potato: 0, wheat: 1, mushroom: 2, corn: 3, herb: 4 };
 
 export default class Crop extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, kind) {

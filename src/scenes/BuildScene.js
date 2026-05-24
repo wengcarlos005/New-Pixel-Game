@@ -3,6 +3,7 @@ import { State, totalCount, removeAcross, toast } from '../systems/GameState.js'
 import { ITEMS } from '../data/items.js';
 import { RECIPES } from '../data/recipes.js';
 
+
 // BuildScene = crafting filtered to placeable recipes
 export default class BuildScene extends Phaser.Scene {
   constructor() { super('BuildScene'); }
@@ -15,7 +16,8 @@ export default class BuildScene extends Phaser.Scene {
     this.add.rectangle(w/2, h/2, pw, ph, 0x10141c, 0.96).setStrokeStyle(2, 0x4a5260);
     this.add.text(w/2, py + 18, 'CONSTRUÇÃO', { fontFamily:'monospace', fontSize:'18px', color:'#e6c98a' }).setOrigin(0.5);
 
-    const placeables = RECIPES.filter(r => r.kind === 'placeable');
+    const completed = State.research ? State.research.completed : [];
+    const placeables = RECIPES.filter(r => r.kind === 'placeable' && (!r.tech || completed.includes(r.tech)));
     placeables.forEach((r, i) => {
       const cols = 3, col = i % cols, row = Math.floor(i / cols);
       const cellW = 220, cellH = 120;
@@ -66,6 +68,7 @@ function previewKey(kind) {
     campfire:'campfire', chest:'chest', water_tank:'water_tank',
     small_gen:'small_gen', planter:'planter',
     floor_tile:'floor_tile', wall_tile:'wall_tile',
+    lab_bench:'lab_bench',
   };
   return map[kind] || 'chest';
 }

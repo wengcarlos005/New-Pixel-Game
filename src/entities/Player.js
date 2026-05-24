@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PLAYER_SPEED, PLAYER_RUN, STAMINA_MAX, HUNGER_MAX } from '../config/GameConfig.js';
+import { PLAYER_SPEED, PLAYER_RUN, STAMINA_MAX, HUNGER_MAX, HEALTH_MAX } from '../config/GameConfig.js';
 import { State, Events, toast } from '../systems/GameState.js';
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
@@ -83,6 +83,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   eat(amount) {
     State.player.hunger = Math.min(HUNGER_MAX, State.player.hunger + amount);
     toast(`Comeu (+${amount} fome)`, '#a0e0a0');
+  }
+
+  heal(amount) {
+    State.player.hp = Math.min(HEALTH_MAX, State.player.hp + amount);
+    Events.emit('inv:changed');
   }
 
   facingTile() {

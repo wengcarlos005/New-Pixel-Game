@@ -120,6 +120,46 @@
       "key": "mushroom",
       "stage": 3,
       "file": "crops/mushroom_3.png"
+    },
+    {
+      "key": "corn",
+      "stage": 0,
+      "file": "crops/corn_0.png"
+    },
+    {
+      "key": "corn",
+      "stage": 1,
+      "file": "crops/corn_1.png"
+    },
+    {
+      "key": "corn",
+      "stage": 2,
+      "file": "crops/corn_2.png"
+    },
+    {
+      "key": "corn",
+      "stage": 3,
+      "file": "crops/corn_3.png"
+    },
+    {
+      "key": "herb",
+      "stage": 0,
+      "file": "crops/herb_0.png"
+    },
+    {
+      "key": "herb",
+      "stage": 1,
+      "file": "crops/herb_1.png"
+    },
+    {
+      "key": "herb",
+      "stage": 2,
+      "file": "crops/herb_2.png"
+    },
+    {
+      "key": "herb",
+      "stage": 3,
+      "file": "crops/herb_3.png"
     }
   ],
   "icons": [
@@ -212,6 +252,41 @@
       "index": 17,
       "key": "energy_cell",
       "file": "icons/17_energy_cell.png"
+    },
+    {
+      "index": 18,
+      "key": "seed_corn",
+      "file": "icons/18_seed_corn.png"
+    },
+    {
+      "index": 19,
+      "key": "seed_herb",
+      "file": "icons/19_seed_herb.png"
+    },
+    {
+      "index": 20,
+      "key": "crop_corn",
+      "file": "icons/20_crop_corn.png"
+    },
+    {
+      "index": 21,
+      "key": "crop_herb",
+      "file": "icons/21_crop_herb.png"
+    },
+    {
+      "index": 22,
+      "key": "medicine",
+      "file": "icons/22_medicine.png"
+    },
+    {
+      "index": 23,
+      "key": "circuit",
+      "file": "icons/23_circuit.png"
+    },
+    {
+      "index": 24,
+      "key": "research_data",
+      "file": "icons/24_research_data.png"
     }
   ],
   "objects": [
@@ -290,6 +365,10 @@
     {
       "key": "floor_tile",
       "file": "objects/floor_tile.png"
+    },
+    {
+      "key": "lab_bench",
+      "file": "objects/lab_bench.png"
     }
   ]
 }
