@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CROPS } from '../data/recipes.js';
-import { pickup, toast } from '../systems/GameState.js';
+import { State, pickup, toast } from '../systems/GameState.js';
 
 // 4 stages × 5 crops in crops.png:
 //  row 0: potato, row 1: wheat, row 2: mushroom, row 3: corn, row 4: herb
@@ -32,14 +32,16 @@ export default class Crop extends Phaser.GameObjects.Sprite {
 
   tick(dtMs) {
     if (this.stage >= this.cfg.stages - 1) return;
-    if (!this.watered) return;
-    this.elapsed += dtMs;
+    // Crops always grow — water just doubles the speed
+    const speedMult = this.watered ? 2.0 : 1.0;
+    this.elapsed += dtMs * speedMult;
     const stageMs = this.growMs / (this.cfg.stages - 1);
     if (this.elapsed >= stageMs) {
       this.elapsed = 0;
       this.stage += 1;
       this.setFrame(ROWS[this.kind] * 4 + this.stage);
-      // watered stays true — crop grows through all stages once watered
+      // Consume the water bonus for this stage
+      if (this.watered) { this.watered = false; this.clearTint(); }
     }
   }
 
@@ -47,15 +49,15 @@ export default class Crop extends Phaser.GameObjects.Sprite {
 
   harvest() {
     if (!this.isReady()) {
-      toast('Ainda não está pronto', '#cfd6df');
+      const stagesLeft = (this.cfg.stages - 1) - this.stage;
+      toast(`Faltam ${stagesLeft} estágio(s) para crescer`, '#cfd6df');
       return false;
     }
     pickup(this.cfg.produces, this.cfg.yield);
     // Rare chance of extra seed back
-    if (Math.random() < 0.45) {
-      const seedId = `seed_${this.kind}`;
-      pickup(seedId, 1);
-    }
+    if (Math.random() < 0.45) pickup(`seed_${this.kind}`, 1);
+    // Track for quest system
+    State.quests.cropsHarvested = (State.quests.cropsHarvested || 0) + 1;
     this.destroy();
     return true;
   }

@@ -19,7 +19,6 @@ export const State = {
   inventory: makeInv(24),         // 24 grid slots
   hotbar:    makeInv(6),          // 6 hotbar slots
   hotbarIndex: 0,
-  // Starting kit
   storedChests: [],               // dynamic chest contents (id → grid)
   npcs: [],                       // populated by WorldScene
   energyOnline: false,
@@ -27,13 +26,20 @@ export const State = {
   dayCount: 1,
   // Research system
   research: {
-    completed: [],                // array of tech IDs already done
-    inProgress: null,             // { id, daysLeft, totalDays }
+    completed: [],
+    inProgress: null,
     labBuilt: false,
   },
-  meta: {
-    toasts: [],
+  // Quest / objective tracking
+  quests: {
+    completed: [],
+    campfireBuilt:   false,
+    chestBuilt:      false,
+    cropsHarvested:  0,
+    fedNPC:          false,
+    toolsGiven:      0,
   },
+  meta: { toasts: [] },
 };
 
 export function makeInv(size) { return new Array(size).fill(null); }
@@ -159,19 +165,22 @@ export function startingInventory() {
   addItem(State.hotbar,    'pickaxe', 1);
   addItem(State.hotbar,    'hoe', 1);
   addItem(State.hotbar,    'watering_can', 1);
-  addItem(State.inventory, 'fiber', 3);
-  addItem(State.inventory, 'wood', 2);
-  addItem(State.inventory, 'seed_potato', 3);
+  addItem(State.inventory, 'fiber', 4);
+  addItem(State.inventory, 'wood', 4);
+  addItem(State.inventory, 'stone', 2);
+  addItem(State.inventory, 'water', 5);
+  addItem(State.inventory, 'seed_potato', 4);
   addItem(State.inventory, 'seed_wheat',  3);
-  addItem(State.inventory, 'research_data', 1); // starting research data
+  addItem(State.inventory, 'research_data', 1);
   State.player.hp = HEALTH_MAX;
   State.player.hunger = HUNGER_MAX;
   State.player.stamina = STAMINA_MAX;
-  State.dayMs = DAY_LENGTH_MS * 0.18; // start at morning
+  State.dayMs = DAY_LENGTH_MS * 0.18;
   State.dayCount = 1;
   State.energyOnline = false;
   State.npcs = [];
   State.research = { completed: [], inProgress: null, labBuilt: false };
+  State.quests  = { completed: [], campfireBuilt: false, chestBuilt: false, cropsHarvested: 0, fedNPC: false, toolsGiven: 0 };
 }
 
 // Called once per in-game day to tick research progress

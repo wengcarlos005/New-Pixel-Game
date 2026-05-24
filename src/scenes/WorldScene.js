@@ -4,6 +4,7 @@ import { T, SOLID } from '../data/tiles.js';
 import { buildMap, SPAWNS, PLAYER_SPAWN } from '../data/map.js';
 import { ITEMS } from '../data/items.js';
 import { State, Events, toast, addItem, removeItem, removeAcross, totalCount, pickup, startingInventory, activeTool, activeSlot, timeOfDay, researchDayTick } from '../systems/GameState.js';
+import { checkQuests, getActiveQuest } from '../systems/QuestSystem.js';
 import Player from '../entities/Player.js';
 import NPC from '../entities/NPC.js';
 import ResourceNode from '../entities/ResourceNode.js';
@@ -102,6 +103,21 @@ export default class WorldScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
     this.startRandomSpawner();
+
+    // Tutorial hints
+    this.time.delayedCall(1800,  () => toast('Use WASD para mover.  Pressione E perto de objetos para interagir.', '#e6c98a'));
+    this.time.delayedCall(6000,  () => toast('Machado na mão (tecla 1) → E perto de árvores para cortar madeira.', '#e6c98a'));
+    this.time.delayedCall(11000, () => toast('I = Inventário · C = Crafting · B = Construção · R = Pesquisa', '#e6c98a'));
+    this.time.delayedCall(16000, () => toast('Fale com os NPCs (E) — dê ferramentas e eles trabalham por você!', '#cfe8a0'));
+
+    // Quest event listener
+    Events.on('quest:complete', (q) => {
+      toast(`✅ Objetivo: ${q.title} — concluído!`, '#ffd070');
+      Events.emit('quest:updated');
+    });
+
+    // Quest poll timer
+    this.questPoll = 0;
   }
 
   spawnFromList() {
@@ -373,6 +389,9 @@ export default class WorldScene extends Phaser.Scene {
       this.placeablesByKey[key] = place;
       this.interactables.push({ obj: place, kind: 'placed' });
     }
+    // Quest hooks
+    if (this.placementKind === 'campfire') State.quests.campfireBuilt = true;
+    if (this.placementKind === 'chest')    State.quests.chestBuilt    = true;
     toast('Posicionado', '#cfe8a0');
     this.cancelPlacement();
   }
@@ -382,6 +401,17 @@ export default class WorldScene extends Phaser.Scene {
     this.input.off('pointermove', this.movePlacement, this);
     this.input.off('pointerdown', this.confirmPlacement, this);
     this.placementKind = null;
+  }
+
+  // ---------------------------------------------------------------- NPC HELPERS
+  findNearestResource(x, y, kind, range) {
+    let best = null, bestD = range;
+    this.resources.children.iterate(node => {
+      if (!node || !node.active || node.kind !== kind) return;
+      const d = Phaser.Math.Distance.Between(x, y, node.x, node.y);
+      if (d < bestD) { best = node; bestD = d; }
+    });
+    return best;
   }
 
   // ---------------------------------------------------------------- RESOURCE RESPAWN
@@ -491,8 +521,20 @@ export default class WorldScene extends Phaser.Scene {
     this.npcsTick += delta;
     if (this.npcsTick > 16) {
       const dt = this.npcsTick / 1000;
-      this.npcs.children.iterate(n => { if (n) n.update(dt); });
+      this.npcs.children.iterate(n => {
+        if (!n) return;
+        n.update(dt);
+        n.doTask(dt, this);   // auto-work if tool assigned
+      });
       this.npcsTick = 0;
+    }
+
+    // Quest check every 2 s
+    this.questPoll += delta;
+    if (this.questPoll > 2000) {
+      this.questPoll = 0;
+      checkQuests();
+      Events.emit('quest:updated');
     }
 
     // Crops grow
