@@ -29,6 +29,72 @@ function makePNG(w,h,pixels) {
   const sig=Buffer.from([137,80,78,71,13,10,26,10]);
   return Buffer.concat([sig,chunk('IHDR',ihdr),chunk('IDAT',zlib.deflateSync(raw,{level:6})),chunk('IEND',Buffer.alloc(0))]);
 }
+function readPNG(file) {
+  const buf = fs.readFileSync(file);
+  if (buf.readUInt32BE(0) !== 0x89504e47) throw new Error(`Not a PNG: ${file}`);
+  let pos = 8, w = 0, h = 0, bitDepth = 0, colorType = 0;
+  let palette = null, transparency = null;
+  const idat = [];
+  while (pos < buf.length) {
+    const len = buf.readUInt32BE(pos); pos += 4;
+    const type = buf.toString('ascii', pos, pos + 4); pos += 4;
+    const data = buf.subarray(pos, pos + len); pos += len + 4;
+    if (type === 'IHDR') {
+      w = data.readUInt32BE(0); h = data.readUInt32BE(4);
+      bitDepth = data[8]; colorType = data[9];
+    } else if (type === 'IDAT') {
+      idat.push(data);
+    } else if (type === 'PLTE') {
+      palette = data;
+    } else if (type === 'tRNS') {
+      transparency = data;
+    } else if (type === 'IEND') break;
+  }
+  if (bitDepth !== 8 || ![2,3,6].includes(colorType)) throw new Error(`Unsupported PNG format in ${file}; expected 8-bit RGB, indexed, or RGBA`);
+  const raw = zlib.inflateSync(Buffer.concat(idat));
+  const bpp = colorType === 6 ? 4 : (colorType === 2 ? 3 : 1);
+  const stride = w * bpp;
+  const reconRows = Buffer.alloc(h * stride);
+  let rp = 0;
+  for (let y = 0; y < h; y++) {
+    const filter = raw[rp++];
+    for (let x = 0; x < stride; x++) {
+      const val = raw[rp++];
+      const left = x >= bpp ? reconRows[y * stride + x - bpp] : 0;
+      const up = y > 0 ? reconRows[(y - 1) * stride + x] : 0;
+      const upLeft = (y > 0 && x >= bpp) ? reconRows[(y - 1) * stride + x - bpp] : 0;
+      let recon = val;
+      if (filter === 1) recon = val + left;
+      else if (filter === 2) recon = val + up;
+      else if (filter === 3) recon = val + Math.floor((left + up) / 2);
+      else if (filter === 4) {
+        const p = left + up - upLeft;
+        const pa = Math.abs(p - left), pb = Math.abs(p - up), pc = Math.abs(p - upLeft);
+        recon = val + (pa <= pb && pa <= pc ? left : (pb <= pc ? up : upLeft));
+      } else if (filter !== 0) {
+        throw new Error(`Unsupported PNG filter ${filter} in ${file}`);
+      }
+      reconRows[y * stride + x] = recon & 255;
+    }
+  }
+  const out = Buffer.alloc(w * h * 4);
+  for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+    const di = (y*w+x)*4;
+    if (colorType === 6) {
+      const si = y*stride+x*4;
+      out[di]=reconRows[si]; out[di+1]=reconRows[si+1]; out[di+2]=reconRows[si+2]; out[di+3]=reconRows[si+3];
+    } else if (colorType === 2) {
+      const si = y*stride+x*3;
+      out[di]=reconRows[si]; out[di+1]=reconRows[si+1]; out[di+2]=reconRows[si+2]; out[di+3]=255;
+    } else {
+      if (!palette) throw new Error(`Indexed PNG missing PLTE: ${file}`);
+      const idx = reconRows[y*stride+x], pi = idx*3;
+      out[di]=palette[pi] || 0; out[di+1]=palette[pi+1] || 0; out[di+2]=palette[pi+2] || 0;
+      out[di+3]=transparency && idx < transparency.length ? transparency[idx] : 255;
+    }
+  }
+  return { w, h, pixels: out };
+}
 function blankPx(w,h){ return Buffer.alloc(w*h*4); }
 
 // ─── Pixel helpers ────────────────────────────────────────────────────────────
@@ -57,6 +123,35 @@ function grassTuft(px,W,x,y,dark,mid,light){
   line(px,W,x+1,y,x+1,y-5, mid[0],mid[1],mid[2]);
   line(px,W,x+2,y,x+4,y-3, dark[0],dark[1],dark[2]);
   sp(px,W,x+1,y-5, light[0],light[1],light[2]);
+}
+function blit(src, dst, dstW, sx, sy, sw, sh, dx, dy, scale=1){
+  for (let y=0; y<sh*scale; y++) for (let x=0; x<sw*scale; x++) {
+    const srcX = sx + Math.floor(x / scale), srcY = sy + Math.floor(y / scale);
+    if (srcX < 0 || srcY < 0 || srcX >= src.w || srcY >= src.h) continue;
+    const si = (srcY * src.w + srcX) * 4;
+    const a = src.pixels[si+3];
+    if (!a) continue;
+    const di = ((dy+y) * dstW + dx+x) * 4;
+    if (di < 0 || di + 3 >= dst.length) continue;
+    dst[di] = src.pixels[si];
+    dst[di+1] = src.pixels[si+1];
+    dst[di+2] = src.pixels[si+2];
+    dst[di+3] = a;
+  }
+}
+function blitFit(src, dst, dstW, sx, sy, sw, sh, dx, dy, dw, dh){
+  for (let y=0; y<dh; y++) for (let x=0; x<dw; x++) {
+    const srcX = sx + Math.floor(x * sw / dw), srcY = sy + Math.floor(y * sh / dh);
+    const si = (srcY * src.w + srcX) * 4;
+    const a = src.pixels[si+3];
+    if (!a) continue;
+    const di = ((dy+y) * dstW + dx+x) * 4;
+    if (di < 0 || di + 3 >= dst.length) continue;
+    dst[di] = src.pixels[si];
+    dst[di+1] = src.pixels[si+1];
+    dst[di+2] = src.pixels[si+2];
+    dst[di+3] = a;
+  }
 }
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -652,6 +747,15 @@ function genChest(){
   outline(px,W,4,12,24,16, 30,24,20);
   return makePNG(W,H,px);
 }
+function genChestFarmingSet(){
+  const file = thirdPartyFile('Crates And Sacks.png');
+  if (!fs.existsSync(file)) return genChest();
+  const src = readPNG(file);
+  const W=32,H=32, px=blankPx(W,H);
+  // Produce crate loaded with red produce. It reads as a storage chest but with richer farming detail.
+  blit(src, px, W, 32,0,32,32, 0,0);
+  return makePNG(W,H,px);
+}
 function genWaterTank(){
   const W=32,H=40, px=blankPx(W,H);
   fe(px,W,16,37,11,2, 20,18,16,150);
@@ -836,6 +940,110 @@ function genCropPng(cropIndex, stage) {
   CROP_DRAWERS[cropIndex][stage](px,T,0,0);
   return makePNG(T,T,px);
 }
+function thirdPartyFile(name) {
+  return path.join(__dirname, 'public', 'assets', 'third_party', 'scratchio_farming', 'raw', 'farming set opengameart', name);
+}
+function hasThirdPartyFarmingSet() {
+  return fs.existsSync(thirdPartyFile('Vegetables.png')) && fs.existsSync(thirdPartyFile('Cereals.png'));
+}
+function drawCropSeed32(px,W,ox,oy, col){
+  fe(px,W,ox+16,oy+25,8,2, 46,28,18,180);
+  fc(px,W,ox+15,oy+22,2, col[0],col[1],col[2]);
+  fc(px,W,ox+18,oy+21,2, shade(col,28)[0],shade(col,28)[1],shade(col,28)[2]);
+}
+function drawCropSprout32(px,W,ox,oy){
+  fe(px,W,ox+16,oy+27,8,2, 46,28,18,150);
+  fr(px,W,ox+15,oy+14,3,12, 36,126,50);
+  fc(px,W,ox+13,oy+17,4, 74,190,58);
+  fc(px,W,ox+20,oy+18,4, 68,176,56);
+  fc(px,W,ox+16,oy+12,4, 148,224,72);
+  sp(px,W,ox+16,oy+9, 224,252,104);
+}
+function drawCropBush32(px,W,ox,oy, accent){
+  fe(px,W,ox+16,oy+28,10,2, 46,28,18,150);
+  fr(px,W,ox+15,oy+11,3,16, 34,120,48);
+  fc(px,W,ox+10,oy+18,6, 28,140,48);
+  fc(px,W,ox+22,oy+18,6, 28,134,52);
+  fc(px,W,ox+16,oy+12,7, 88,194,58);
+  fc(px,W,ox+16,oy+20,8, 62,170,54);
+  [[11,14],[19,13],[14,22],[22,21]].forEach(([x,y])=>sp(px,W,ox+x,oy+y, accent[0],accent[1],accent[2]));
+}
+function drawHarvestPotato32(px,W,ox,oy){
+  drawCropBush32(px,W,ox,oy,[230,184,118]);
+  [[12,23],[18,24],[22,21]].forEach(([x,y])=>{
+    fc(px,W,ox+x,oy+y,3, 190,132,78);
+    sp(px,W,ox+x-1,oy+y-1, 230,174,112);
+    sp(px,W,ox+x+1,oy+y+1, 112,72,44);
+  });
+}
+function genCropsFarmingSet(){
+  if (!hasThirdPartyFarmingSet()) return genCrops();
+  const veg = readPNG(thirdPartyFile('Vegetables.png'));
+  const cereals = readPNG(thirdPartyFile('Cereals.png'));
+  const T=32, cols=4, rows=3, W=cols*T, H=rows*T;
+  const px=blankPx(W,H);
+  // potato
+  drawCropSeed32(px,W,0,0,[180,130,74]);
+  drawCropSprout32(px,W,T,0);
+  drawCropBush32(px,W,2*T,0,[220,178,112]);
+  drawHarvestPotato32(px,W,3*T,0);
+  // wheat
+  drawCropSeed32(px,W,0,T,[218,180,70]);
+  drawCropSprout32(px,W,T,T);
+  for(let i=0;i<5;i++){
+    const x=2*T+8+i*4;
+    fr(px,W,x,T+12,2,16, 188,126,46);
+    line(px,W,x,T+13,x-3,T+7, 238,210,94);
+    line(px,W,x+1,T+13,x+4,T+7, 238,210,94);
+    sp(px,W,x,T+6, 255,238,130);
+  }
+  blit(cereals, px, W, 0,64,32,32, 3*T,T);
+  // mushroom row keeps the post-apoc fantasy crop but uses 32px scale.
+  drawCropSeed32(px,W,0,2*T,[204,80,116]);
+  drawCropSprout32(px,W,T,2*T);
+  drawCropBush32(px,W,2*T,2*T,[220,86,128]);
+  fr(px,W,3*T+14,2*T+18,5,10, 220,210,184);
+  fc(px,W,3*T+16,2*T+15,10, 184,42,98);
+  fc(px,W,3*T+16,2*T+13,8, 228,70,124);
+  [[11,11],[18,10],[21,16],[14,18]].forEach(([x,y])=>fc(px,W,3*T+x,2*T+y,1, 250,226,208));
+  return makePNG(W,H,px);
+}
+function genCropSourcePng(cropIndex, stage) {
+  if (!hasThirdPartyFarmingSet()) return genCropPng(cropIndex, stage);
+  const T=32, px=blankPx(T,T);
+  if (stage === 0) {
+    const colors = [[180,130,74],[218,180,70],[204,80,116]];
+    drawCropSeed32(px,T,0,0,colors[cropIndex]);
+  } else if (stage === 1) {
+    drawCropSprout32(px,T,0,0);
+  } else if (stage === 2) {
+    const accents = [[220,178,112],[238,210,94],[220,86,128]];
+    if (cropIndex === 1) {
+      for(let i=0;i<5;i++){
+        const x=8+i*4;
+        fr(px,T,x,12,2,16, 188,126,46);
+        line(px,T,x,13,x-3,7, 238,210,94);
+        line(px,T,x+1,13,x+4,7, 238,210,94);
+        sp(px,T,x,6, 255,238,130);
+      }
+    } else {
+      drawCropBush32(px,T,0,0,accents[cropIndex]);
+    }
+  } else {
+    if (cropIndex === 0) {
+      drawHarvestPotato32(px,T,0,0);
+    } else if (cropIndex === 1) {
+      const cereals = readPNG(thirdPartyFile('Cereals.png'));
+      blit(cereals, px, T, 0,64,32,32, 0,0);
+    } else {
+      fr(px,T,14,18,5,10, 220,210,184);
+      fc(px,T,16,15,10, 184,42,98);
+      fc(px,T,16,13,8, 228,70,124);
+      [[11,11],[18,10],[21,16],[14,18]].forEach(([x,y])=>fc(px,T,x,y,1, 250,226,208));
+    }
+  }
+  return makePNG(T,T,px);
+}
 
 // ─── Items (16x16 icons) ──────────────────────────────────────────────────────
 function iWood(px,W,ox,oy){
@@ -978,6 +1186,26 @@ function genIconPng(i) {
   ICONS[i](px,T,0,0);
   return makePNG(T,T,px);
 }
+function genIconsFarmingSet(){
+  if (!hasThirdPartyFarmingSet()) return genIcons();
+  const veg = readPNG(thirdPartyFile('Vegetables.png'));
+  const cereals = readPNG(thirdPartyFile('Cereals.png'));
+  const seeds = fs.existsSync(thirdPartyFile('Seeds_Cereals.png')) ? readPNG(thirdPartyFile('Seeds_Cereals.png')) : null;
+  const axe = fs.existsSync(thirdPartyFile('Iron Axe.png')) ? readPNG(thirdPartyFile('Iron Axe.png')) : null;
+  const T=16, W=ICONS.length*T, H=T, px=blankPx(W,H);
+  ICONS.forEach((fn,i)=> fn(px,W, i*T, 0));
+  const put = (idx, src, sx, sy, sw=32, sh=32) => blitFit(src, px, W, sx, sy, sw, sh, idx*T, 0, T, T);
+  put(5, seeds || cereals, 0, 0, seeds ? 16 : 32, seeds ? 32 : 32);
+  put(6, seeds || cereals, 0, seeds ? 32 : 0, seeds ? 16 : 32, seeds ? 32 : 32);
+  put(7, veg, 32, 160, 32, 32);
+  put(8, veg, 32, 32);
+  put(9, cereals, 0, 64);
+  // Keep mushroom icon handcrafted but larger-looking.
+  put(11, axe || veg, 0, 0);
+  put(13, axe || veg, 32, 0);
+  put(15, axe || veg, 96, 0);
+  return makePNG(W,H,px);
+}
 
 // ─── UI panels ────────────────────────────────────────────────────────────────
 function genUiSlot(){
@@ -1077,7 +1305,7 @@ function writeSourceAsset(group, name, buf){
 console.log('Generating assets to', OUT);
 TILE_KEYS.forEach((key, i) => writeSourceAsset('tiles', `${String(i).padStart(2,'0')}_${key}.png`, genTilePng(i)));
 for (let c=0;c<CROP_KEYS.length;c++) {
-  for (let s=0;s<4;s++) writeSourceAsset('crops', `${CROP_KEYS[c]}_${s}.png`, genCropPng(c,s));
+  for (let s=0;s<4;s++) writeSourceAsset('crops', `${CROP_KEYS[c]}_${s}.png`, genCropSourcePng(c,s));
 }
 ICON_KEYS.forEach((key, i) => writeSourceAsset('icons', `${String(i).padStart(2,'0')}_${key}.png`, genIconPng(i)));
 
@@ -1095,7 +1323,7 @@ const objectAssets = {
   generator_broken: genBrokenGen(),
   generator_on: genGenOn(),
   campfire: genCampfire(),
-  chest: genChest(),
+  chest: genChestFarmingSet(),
   water_tank: genWaterTank(),
   small_gen: genSmallGen(),
   planter: genPlanter(),
@@ -1124,8 +1352,8 @@ write('small_gen.png',     objectAssets.small_gen);
 write('planter.png',       objectAssets.planter);
 write('wall_tile.png',     objectAssets.wall_tile);
 write('floor_tile.png',    objectAssets.floor_tile);
-write('crops.png',         genCrops());
-write('icons.png',         genIcons());
+write('crops.png',         genCropsFarmingSet());
+write('icons.png',         genIconsFarmingSet());
 write('ui_slot.png',       genUiSlot());
 write('ui_slot_hi.png',    genUiSlotHi());
 write('ui_bg.png',         genUiBg());
@@ -1138,7 +1366,7 @@ fs.writeFileSync(path.join(OUT, 'icons.json'), JSON.stringify({ order: ICON_KEYS
 fs.writeFileSync(path.join(SOURCE_OUT, 'manifest.json'), JSON.stringify({
   note: 'Source PNGs generated one-by-one. Runtime sheets such as terrain.png, crops.png, and icons.png are packed from these stable asset slots for Phaser.',
   tileSize: 32,
-  cropSize: 16,
+  cropSize: hasThirdPartyFarmingSet() ? 32 : 16,
   iconSize: 16,
   tiles: TILE_KEYS.map((key, i) => ({ index: i, key, file: `tiles/${String(i).padStart(2,'0')}_${key}.png` })),
   crops: CROP_KEYS.flatMap((key, c) => [0,1,2,3].map(stage => ({ key, stage, file: `crops/${key}_${stage}.png` }))),

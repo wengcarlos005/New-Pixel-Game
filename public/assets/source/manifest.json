@@ -1,7 +1,7 @@
 {
   "note": "Source PNGs generated one-by-one. Runtime sheets such as terrain.png, crops.png, and icons.png are packed from these stable asset slots for Phaser.",
   "tileSize": 32,
-  "cropSize": 16,
+  "cropSize": 32,
   "iconSize": 16,
   "tiles": [
     {

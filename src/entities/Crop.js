@@ -19,7 +19,7 @@ export default class Crop extends Phaser.GameObjects.Sprite {
     this.growMs = cfg.growMs;
     this.elapsed = 0;
     this.setDepth(y + 8);
-    this.setScale(2);  // upscale 16→32
+    this.setScale(1);
     this.update = this.update.bind(this);
   }
 

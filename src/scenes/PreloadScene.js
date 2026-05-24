@@ -37,7 +37,7 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image('wall_tile', 'assets/wall_tile.png');
     this.load.image('floor_tile','assets/floor_tile.png');
 
-    this.load.spritesheet('crops', 'assets/crops.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('crops', 'assets/crops.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('icons', 'assets/icons.png', { frameWidth: 16, frameHeight: 16 });
 
     this.load.image('ui_slot',    'assets/ui_slot.png');

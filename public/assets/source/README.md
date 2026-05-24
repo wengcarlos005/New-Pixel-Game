@@ -20,7 +20,7 @@ npm run gen
 Current dimensions:
 
 - tiles: 32x32
-- crops: 16x16
+- crops: 32x32 when the third-party farming pack is present, otherwise 16x16 fallback
 - icons: 16x16
 - character sheets: 48x96, frames are 16x24
 - trees: 48x64
@@ -34,3 +34,8 @@ Style target:
 - dense crop silhouettes
 - bright water highlights
 - crisp pixel edges with no blur
+
+Third-party source:
+
+- `../third_party/scratchio_farming`: Farming Set (Pixel-Art) by ScratchIO from OpenGameArt, CC0.
+  Runtime crops/icons/crates may use cropped pieces from this pack.
